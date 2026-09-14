@@ -354,6 +354,25 @@ button {
   margin-left: auto;
 }
 
+.game-stat--next {
+  margin-left: 14px;
+}
+
+/* Restarted from JS to pop a stat when it changes. */
+.game-stat__value.is-pop {
+  display: inline-block;
+  animation: stat-pop 0.22s ease-out;
+}
+
+@keyframes stat-pop {
+  0% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .game-stat__label {
   color: var(--text-dim);
   font-size: 12px;
