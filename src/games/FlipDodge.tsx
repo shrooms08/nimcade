@@ -25,20 +25,18 @@ const PLAYER_FROM_BOTTOM = 80
 const OBSTACLE_W = 76
 const OBSTACLE_H = 30
 const COIN_SIZE = 56
-/** Road speed at 1x, in units per second. Keeps the 3x flip window at 220ms+. */
-const BASE_SPEED = 116
-/** Speed factor: 1x -> 2.5x over the first 40s, 2.5x -> 3x from 40s to 120s, then holds. */
-const RAMP_FAST_SECONDS = 40
-const RAMP_FAST_FACTOR = 2.5
-const RAMP_SLOW_SECONDS = 120
-const MAX_FACTOR = 3
+/** Road speed at 1x, in units per second. Keeps the 3.5x flip window at 200ms+. */
+const BASE_SPEED = 102
+/** Speed factor keyframes [seconds, factor], linear between them, holding after the last. */
+const RAMP: [number, number][] = [[0, 1], [15, 2], [45, 3], [90, 3.5]]
+const MAX_FACTOR = RAMP[RAMP.length - 1][1]
 /**
  * Row spacing tightens linearly with speed. Flip window between back-to-back
- * barrier rows = (gap - 2 * HIT_Y) / speed: ~879ms at 1x, ~386ms at 2x, ~221ms
- * at 3x. About 4 rows fit on a 390x700 board.
+ * barrier rows = (gap - 2 * HIT_Y) / speed: ~1000ms at 1x, ~441ms at 2x,
+ * ~255ms at 3x, ~202ms at 3.5x.
  */
 const ROW_GAP_SLOW = 150
-const ROW_GAP_FAST = 125
+const ROW_GAP_FAST = 120
 const FIRST_ROW_Y = -60
 /** When a round starts, rows are already laid out from this far above the critter. */
 const FIRST_ROW_LEAD = 160
@@ -87,10 +85,11 @@ function createWorld(): World {
 }
 
 function speedFactor(elapsed: number): number {
-  if (elapsed <= RAMP_FAST_SECONDS)
-    return 1 + (RAMP_FAST_FACTOR - 1) * (elapsed / RAMP_FAST_SECONDS)
-  if (elapsed <= RAMP_SLOW_SECONDS)
-    return RAMP_FAST_FACTOR + (MAX_FACTOR - RAMP_FAST_FACTOR) * ((elapsed - RAMP_FAST_SECONDS) / (RAMP_SLOW_SECONDS - RAMP_FAST_SECONDS))
+  for (let i = 1; i < RAMP.length; i++) {
+    const [[t0, f0], [t1, f1]] = [RAMP[i - 1], RAMP[i]]
+    if (elapsed <= t1)
+      return f0 + (f1 - f0) * ((elapsed - t0) / (t1 - t0))
+  }
   return MAX_FACTOR
 }
 
@@ -263,7 +262,7 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     if (world.status === 'ready') {
       world.status = 'playing'
       if (import.meta.env.DEV) // stripped from production builds
-        console.info(`[Flip Dodge] flip window: 1x ${flipWindowMs(1)}ms, 2x ${flipWindowMs(2)}ms, 3x ${flipWindowMs(3)}ms`)
+        console.info(`[Flip Dodge] flip window: 1x ${flipWindowMs(1)}ms, 2x ${flipWindowMs(2)}ms, 3x ${flipWindowMs(3)}ms, 3.5x ${flipWindowMs(3.5)}ms`)
       round.begin()
       start()
       return
