@@ -5,9 +5,10 @@ import { copyText } from '../clipboard'
 import { Coin } from '../components/Coin'
 import { CopyIcon, NoticeIcon } from '../components/icons'
 import { Sheet } from '../components/Sheet'
+import { DisplayNameRow } from './DisplayNameRow'
 import { shortAddress } from '../format'
 
-/** Connect, or see the connected wallet: address, tips sent, Cup winnings. */
+/** Display name, then connect or see the connected wallet: address, tips sent, Cup winnings. */
 export function WalletSheet({
   status,
   connected,
@@ -57,6 +58,7 @@ export function WalletSheet({
         : busy ? 'Confirm in Nimiq Pay…' : 'Your Nimiq Pay wallet, one tap'
     return (
       <Sheet label="Connect wallet" onClose={onClose}>
+        <DisplayNameRow />
         <div className="nc-wallet-hero">
           <Coin size={56} />
           <h2 className="nc-sheet__title">Connect wallet</h2>
@@ -80,6 +82,7 @@ export function WalletSheet({
 
   return (
     <Sheet label="Wallet" onClose={onClose}>
+      <DisplayNameRow />
       <div className="nc-wallet-id">
         <Coin size={40} />
         <div className="nc-wallet-id__text">

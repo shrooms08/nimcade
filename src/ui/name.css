@@ -1,0 +1,132 @@
+/* Display name: the wallet sheet row, the inline editor, and the game over prompt. */
+
+.nc-name-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-tile);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--nc-white);
+  text-align: left;
+}
+
+.nc-name-row.is-editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.nc-name-row__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--nc-fs-md);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nc-name-row__value.is-empty {
+  color: var(--nc-grey-300);
+  font-weight: 500;
+}
+
+.nc-name-row__edit {
+  color: var(--nc-gold);
+  font-size: var(--nc-fs-xs);
+  font-weight: 600;
+}
+
+.nc-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.nc-name-field__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nc-name-field__input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-pill);
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--nc-white);
+  font: inherit;
+  /* 16px keeps mobile browsers from zooming into the field. */
+  font-size: 16px;
+}
+
+.nc-name-field__input::placeholder {
+  color: var(--nc-grey-400);
+}
+
+.nc-name-field__input:focus {
+  border-color: var(--nc-gold-line);
+}
+
+.nc-name-field__input[aria-invalid='true'] {
+  border-color: var(--nc-danger);
+}
+
+.nc-name-field__save {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 18px;
+}
+
+.nc-name-field__cancel {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 8px;
+  color: var(--nc-grey-300);
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+}
+
+.nc-name-field__error {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--nc-danger);
+  font-size: var(--nc-fs-xs);
+  font-weight: 500;
+}
+
+.nc-name-field.is-compact .nc-name-field__input,
+.nc-name-field.is-compact .nc-name-field__save {
+  height: 40px;
+  min-height: 40px;
+}
+
+/* Game over: shown once, above Play again. */
+.nc-over__name {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 20px;
+}
+
+.nc-over__name-label {
+  color: var(--nc-white);
+  font-size: var(--nc-fs-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.nc-over__name + .nc-over__actions {
+  margin-top: 14px;
+}

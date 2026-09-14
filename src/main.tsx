@@ -9,6 +9,7 @@ import './ui/chrome.css'
 import './ui/overlays.css'
 import './ui/sheets.css'
 import './ui/cup.css'
+import './ui/name.css'
 import './styles.css'
 
 createRoot(document.getElementById('root')!).render(

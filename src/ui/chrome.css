@@ -58,6 +58,10 @@
   .nc-segmented__item {
     padding: 8px 12px;
   }
+
+  .nc-wallet-chip:not(.is-collapsed) .nc-wallet-chip__label {
+    max-width: 48px;
+  }
 }
 
 .nc-segmented__item.is-on {
@@ -85,8 +89,9 @@
 }
 
 .nc-wallet-chip__label {
-  max-width: 110px;
+  max-width: 56px;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--nc-fs-xs);
   font-weight: 600;
   letter-spacing: 0.02em;

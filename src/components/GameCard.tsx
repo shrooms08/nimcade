@@ -129,6 +129,7 @@ export default function GameCard({
   const report = useCallback((result: RoundReport) => {
     const previousBest = lastRoundRef.current?.previousBest ?? Math.max(0, result.best)
     localStats.addPlay(game.id)
+    // TODO(backend): submit this round to the Cup leaderboard here, with the player's name from getName() (src/lib/profile.ts).
     onRoundOverRef.current({ reason: result.reason, score: result.score, previousBest, newBest: result.score > 0 && result.score > previousBest })
   }, [game.id])
 

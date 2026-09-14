@@ -3,6 +3,7 @@ import type { Game } from '../../games/types'
 import { cupSource } from '../../lib/cupMock'
 import type { CupSnapshot } from '../../lib/cupMock'
 import { readBest } from '../../lib/scores'
+import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
 import { Sheet } from '../components/Sheet'
 import { shortAddress } from '../format'
@@ -27,6 +28,7 @@ export function CupSheet({
   address: string | null
   onClose: () => void
 }) {
+  const name = usePlayerName()
   const [gameId, setGameId] = useState(initialGameId)
   const [snapshot, setSnapshot] = useState<CupSnapshot | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -95,7 +97,7 @@ export function CupSheet({
       <div className="nc-cup-you">
         <span className="nc-cup-you__rank">{you?.rank ?? '—'}</span>
         <div className="nc-cup-you__text">
-          <span className="nc-cup-you__name">You · {address ? shortAddress(address) : 'not connected'}</span>
+          <span className="nc-cup-you__name">{name ?? 'You'} · {address ? shortAddress(address) : 'not connected'}</span>
           <span className="nc-cup-you__sub">
             {!you || you.rank === null
               ? `Play ${game.title} to enter`

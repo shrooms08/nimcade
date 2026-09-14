@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react'
+import { getName, markNamePromptSeen, namePromptSeen } from '../../lib/profile'
+import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
 import { TrophyIcon } from '../components/icons'
+import { NameField } from '../components/NameField'
 
 export interface GameOverInfo {
   reason: string
@@ -33,6 +37,15 @@ export function GameOverOverlay({
   onNext: () => void
 }) {
   const best = Math.max(info.previousBest, info.score)
+  const name = usePlayerName()
+  // Offered once: on the first game over without a name, whether the player saves or skips.
+  const [offerName] = useState(() => getName() === null && !namePromptSeen())
+
+  useEffect(() => {
+    if (offerName)
+      markNamePromptSeen()
+  }, [offerName])
+
   return (
     <div className="nc-over" role="dialog" aria-label="Game over">
       {info.newBest && (
@@ -57,8 +70,14 @@ export function GameOverOverlay({
       <button type="button" className="nc-over__rank" onClick={onCup}>
         <TrophyIcon />
         {/* TODO(backend): real daily rank */}
-        <span>#— today</span>
+        <span>{name ? `${name}, #— today` : '#— today'}</span>
       </button>
+      {offerName && !name && (
+        <div className="nc-over__name">
+          <span className="nc-over__name-label">Add your name to enter the Cup</span>
+          <NameField compact />
+        </div>
+      )}
       <div className="nc-over__actions">
         <button type="button" className="nc-btn nc-btn--white" onClick={onPlayAgain}>Play again</button>
         <button type="button" className="nc-btn nc-btn--gold" onClick={onTip}>

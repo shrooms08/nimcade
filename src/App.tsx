@@ -8,6 +8,7 @@ import { localStats } from './lib/localStats'
 import { sendTip } from './lib/nimiq'
 import { readBest } from './lib/scores'
 import type { TipAmount } from './lib/tip'
+import { usePlayerName } from './lib/usePlayerName'
 import { useWallet } from './lib/useWallet'
 import { Banners } from './ui/chrome/Banners'
 import type { GameOverInfo } from './ui/chrome/GameOverOverlay'
@@ -164,7 +165,9 @@ export default function App() {
     toast.show((await copyText(url)) ? 'Link copied' : "Couldn't copy the link", TOAST_MS)
   }
 
-  const walletLabel = connected && wallet.address ? chipAddress(wallet.address) : 'Connect'
+  const playerName = usePlayerName()
+  // Connected: the player's name when set, else the address tail (the full address is in the wallet sheet).
+  const walletLabel = connected && wallet.address ? (playerName ?? chipAddress(wallet.address)) : 'Connect'
 
   return (
     <main className="nc-app">
