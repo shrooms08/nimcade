@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { RoundReportContext } from '../games/shared/roundReport'
 import type { RoundReport } from '../games/shared/roundReport'
 import type { Game } from '../games/types'
+import type { CupEntryState } from '../lib/cupEntry'
 import { localStats } from '../lib/localStats'
 import { readBest, writeBest } from '../lib/scores'
 import { GameOverOverlay } from '../ui/chrome/GameOverOverlay'
@@ -54,6 +55,7 @@ export default function GameCard({
   near,
   playing,
   gameOver,
+  cupEntry,
   onEnterPlay,
   onRoundOver,
   onPlayAgain,
@@ -61,6 +63,7 @@ export default function GameCard({
   onCup,
   onNext,
   onReady,
+  onConnectWallet,
 }: {
   game: Game
   /** The card fills the feed. */
@@ -70,6 +73,8 @@ export default function GameCard({
   /** The card is in play mode. */
   playing: boolean
   gameOver: GameOverInfo | null
+  /** Today's Cup entry for the round on the game over overlay. */
+  cupEntry: CupEntryState
   onEnterPlay: () => void
   onRoundOver: (info: GameOverInfo) => void
   onPlayAgain: () => void
@@ -77,6 +82,7 @@ export default function GameCard({
   onCup: () => void
   onNext: () => void
   onReady?: () => void
+  onConnectWallet: () => void
 }) {
   const [retryKey, setRetryKey] = useState(0)
   /** Bumped by Play again: the finished game is still mounted (frozen), so a new round needs a fresh one. */
@@ -88,6 +94,8 @@ export default function GameCard({
   const lastRoundRef = useRef<{ score: number; previousBest: number } | null>(null)
   const pressRef = useRef<{ id: number; x: number; y: number; at: number; type: string } | null>(null)
   const onRoundOverRef = useRef(onRoundOver)
+  /** Set once the finished round is reported, so a remounted end panel (StrictMode in dev) can't report it twice. */
+  const reportedRef = useRef(false)
   const GameComponent = game.component
 
   // Mount as soon as the game is wanted; unmount only once the cover has faded back in.
@@ -110,6 +118,12 @@ export default function GameCard({
     onRoundOverRef.current = onRoundOver
   })
 
+  // A new round starts in play mode: it may be reported again.
+  useEffect(() => {
+    if (playing)
+      reportedRef.current = false
+  }, [playing])
+
   useEffect(() => {
     if (!onReady)
       return
@@ -127,9 +141,12 @@ export default function GameCard({
   }, [game.id])
 
   const report = useCallback((result: RoundReport) => {
+    if (reportedRef.current)
+      return
+    reportedRef.current = true
     const previousBest = lastRoundRef.current?.previousBest ?? Math.max(0, result.best)
     localStats.addPlay(game.id)
-    // TODO(backend): submit this round to the Cup leaderboard here, with the player's name from getName() (src/lib/profile.ts).
+    // The signed Cup entry for this round is made by App (useCupEntry in src/lib/cupEntry.ts) once onRoundOver lands.
     onRoundOverRef.current({ reason: result.reason, score: result.score, previousBest, newBest: result.score > 0 && result.score > previousBest })
   }, [game.id])
 
@@ -181,7 +198,7 @@ export default function GameCard({
         />
       )}
       {gameOver && current && (
-        <GameOverOverlay info={gameOver} onPlayAgain={playAgain} onTip={onTip} onCup={onCup} onNext={onNext} />
+        <GameOverOverlay info={gameOver} entry={cupEntry} onPlayAgain={playAgain} onTip={onTip} onCup={onCup} onNext={onNext} onConnect={onConnectWallet} />
       )}
     </>
   )

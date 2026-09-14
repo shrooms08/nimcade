@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { CupEntryState } from '../../lib/cupEntry'
 import { getName, markNamePromptSeen, namePromptSeen } from '../../lib/profile'
 import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
@@ -19,22 +20,35 @@ const BURST: [number, number, number, 'gold' | 'white', number][] = [
   [4, -36, -104, 'gold', 0.18], [5, 48, 96, 'white', 0.22], [6, -68, 86, 'gold', 0.28],
 ]
 
+/** "minos, #4 today"; "#— today" while entering, when the Cup is off or the rank is unknown. */
+function rankLine(entry: CupEntryState, name: string | null): string {
+  const rank = entry.kind === 'entered' && entry.rank !== null ? `#${entry.rank}` : '#—'
+  const who = name ? `${name}, ` : ''
+  return entry.kind === 'entering' ? `${who}entering the Cup…` : `${who}${rank} today`
+}
+
 /**
  * Covers the card when a round ends. The card is back in browse mode, so a
  * swipe anywhere on this overlay scrolls the feed.
  */
 export function GameOverOverlay({
   info,
+  entry,
   onPlayAgain,
   onTip,
   onCup,
   onNext,
+  onConnect,
 }: {
   info: GameOverInfo
+  /** Today's Cup entry for this round. */
+  entry: CupEntryState
   onPlayAgain: () => void
   onTip: () => void
   onCup: () => void
   onNext: () => void
+  /** Opens the wallet sheet; the entry is retried once connected. */
+  onConnect: () => void
 }) {
   const best = Math.max(info.previousBest, info.score)
   const name = usePlayerName()
@@ -67,11 +81,21 @@ export function GameOverOverlay({
       <span className="nc-over__best">
         {info.newBest ? `previous ${info.previousBest.toLocaleString()}` : `best ${best.toLocaleString()}`}
       </span>
-      <button type="button" className="nc-over__rank" onClick={onCup}>
-        <TrophyIcon />
-        {/* TODO(backend): real daily rank */}
-        <span>{name ? `${name}, #— today` : '#— today'}</span>
-      </button>
+      {entry.kind === 'needs-wallet'
+        ? (
+            <button type="button" className="nc-over__rank" onClick={onConnect}>
+              <TrophyIcon />
+              <span>Connect to enter the Cup</span>
+            </button>
+          )
+        : entry.kind === 'not-entered'
+          ? <span className="nc-over__rank nc-over__rank--quiet">Not entered</span>
+          : (
+              <button type="button" className="nc-over__rank" onClick={onCup}>
+                <TrophyIcon />
+                <span>{rankLine(entry, name)}</span>
+              </button>
+            )}
       {offerName && !name && (
         <div className="nc-over__name">
           <span className="nc-over__name-label">Add your name to enter the Cup</span>

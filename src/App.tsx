@@ -4,11 +4,13 @@ import type { FeedHandle } from './components/Feed'
 import GameCard from './components/GameCard'
 import { games } from './games/registry'
 import type { Game } from './games/types'
+import { useCupEntry } from './lib/cupEntry'
 import { localStats } from './lib/localStats'
 import { sendTip } from './lib/nimiq'
 import { readBest } from './lib/scores'
 import type { TipAmount } from './lib/tip'
 import { usePlayerName } from './lib/usePlayerName'
+import { useTipCounts } from './lib/useTipCounts'
 import { useWallet } from './lib/useWallet'
 import { Banners } from './ui/chrome/Banners'
 import type { GameOverInfo } from './ui/chrome/GameOverOverlay'
@@ -63,6 +65,8 @@ export default function App() {
     return { best: readBest(game.id), plays: localStats.plays(game.id), tips: localStats.tips(game.id), tipsSent: localStats.tipsSent() }
   }, [game.id, statsVersion])
 
+  const cup = useCupEntry({ connected, address: connected ? wallet.address : null, getProvider: wallet.getProvider, gameOver })
+  const tipCounts = useTipCounts(statsVersion)
   const markReady = useCallback(() => setFirstCardReady(true), [])
   const onSplashExited = useCallback(() => setSplashDone(true), [])
 
@@ -102,6 +106,7 @@ export default function App() {
       return
     setGameOver({ gameId: target.id, info })
     setMode('browse')
+    cup.roundEnded(target.id, info.score)
     setStatsVersion(v => v + 1)
   }
 
@@ -183,6 +188,8 @@ export default function App() {
             near={Math.abs(i - index) <= 1}
             playing={playing && i === index}
             gameOver={gameOver?.gameId === g.id ? gameOver.info : null}
+            cupEntry={cup.entry}
+            onConnectWallet={() => openSheet('wallet')}
             onEnterPlay={enterPlay}
             onRoundOver={info => roundOver(g, info)}
             onPlayAgain={() => { setGameOver(null); setMode('play') }}
@@ -208,7 +215,7 @@ export default function App() {
         game={game}
         best={stats.best}
         plays={stats.plays}
-        tips={stats.tips}
+        tips={tipCounts ? (tipCounts[game.id] ?? 0) : stats.tips}
         hidden={playing || gameOver !== null}
         onTip={openTip}
         onShare={share}

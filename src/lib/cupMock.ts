@@ -1,9 +1,6 @@
 /**
- * Daily Cup data.
- *
- * TODO(backend): everything here is MOCK data from the design prototype. Replace
- * `cupSource` with an API-backed implementation of `CupDataSource`; the Cup and
- * wallet sheets only depend on the interfaces below.
+ * Daily Cup interfaces, plus the MOCK data source from the design prototype. The live source is
+ * cupApi.ts; cup.ts picks one (the mock with VITE_USE_MOCK=true or without Supabase config).
  */
 
 export interface CupEntry {
@@ -35,6 +32,8 @@ export interface CupSnapshot {
 export interface CupPlayer {
   bestScore: number
   address: string | null
+  /** This device's Cup id, when it has entered before (the live board finds the player's row by it). */
+  deviceId: string | null
 }
 
 export interface CupDataSource {
@@ -88,6 +87,3 @@ export const mockCupSource: CupDataSource = {
     return address ? MOCK_WINNINGS_NIM : 0
   },
 }
-
-/** TODO(backend): point this at the real Cup API. */
-export const cupSource: CupDataSource = mockCupSource

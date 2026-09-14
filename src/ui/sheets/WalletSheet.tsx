@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { cupSource } from '../../lib/cupMock'
+import { cupSource } from '../../lib/cup'
 import type { WalletStatus } from '../../lib/useWallet'
 import { copyText } from '../clipboard'
 import { Coin } from '../components/Coin'

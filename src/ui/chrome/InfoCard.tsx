@@ -18,7 +18,7 @@ export function InfoCard({
   best: number
   /** Plays on this device (TODO(backend): global plays). */
   plays: number
-  /** NIM tipped from this device (TODO(backend): total tips for the game). */
+  /** Tips for this game from the tips table (this device's NIM tipped when the backend is off). */
   tips: number
   hidden: boolean
   onTip: () => void
@@ -36,7 +36,7 @@ export function InfoCard({
         <div className="nc-info__stats">
           <span className="nc-stat" aria-label={`${plays} plays`}><PlayIcon />{compactNumber(plays)}</span>
           <span className="nc-stat nc-stat--best" aria-label={`Best ${best}`}><StarIcon />{best ? best.toLocaleString() : '—'}</span>
-          <span className="nc-stat nc-stat--tips" aria-label={`${tips} NIM tipped`}><Coin size={13} />{tips.toLocaleString()}</span>
+          <span className="nc-stat nc-stat--tips" aria-label={`${tips} tips`}><Coin size={13} />{tips.toLocaleString()}</span>
           <button type="button" className="nc-stat nc-stat--share" onClick={onShare} aria-label="Share" tabIndex={tab}>
             <ShareIcon />
           </button>

@@ -230,3 +230,11 @@
   font-weight: 500;
   color: var(--nc-grey-300);
 }
+
+/* The rank line when this round didn't make it into the Cup: quiet, not gold. */
+.nc-over__rank--quiet {
+  border-color: transparent;
+  background: none;
+  color: var(--nc-grey-300);
+  font-weight: 500;
+}

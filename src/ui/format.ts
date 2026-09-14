@@ -18,3 +18,8 @@ export function shortHash(hash: string): string {
 export function makerHandle(maker: string): string {
   return maker.startsWith('@') ? maker : `@${maker.toLowerCase().replace(/\s+/g, '')}`
 }
+
+/** NIM with at most two decimals and grouping: 1234.5 -> "1,234.5". */
+export function formatNim(nim: number): string {
+  return nim.toLocaleString(undefined, { maximumFractionDigits: 2 })
+}

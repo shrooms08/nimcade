@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { Game } from '../../games/types'
-import { cupSource } from '../../lib/cupMock'
-import type { CupSnapshot } from '../../lib/cupMock'
+import { cupSource } from '../../lib/cup'
+import type { CupSnapshot } from '../../lib/cup'
+import { knownDeviceId } from '../../lib/deviceId'
 import { readBest } from '../../lib/scores'
 import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
 import { Sheet } from '../components/Sheet'
-import { shortAddress } from '../format'
+import { formatNim, shortAddress } from '../format'
 
 const DAY_MS = 86_400_000
 
@@ -31,6 +32,7 @@ export function CupSheet({
   const name = usePlayerName()
   const [gameId, setGameId] = useState(initialGameId)
   const [snapshot, setSnapshot] = useState<CupSnapshot | null>(null)
+  const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const day = Math.floor(now / DAY_MS)
 
@@ -41,10 +43,17 @@ export function CupSheet({
 
   useEffect(() => {
     let cancelled = false
-    cupSource.getSnapshot(gameId, { bestScore: readBest(gameId), address }).then((next) => {
-      if (!cancelled)
+    cupSource.getSnapshot(gameId, { bestScore: readBest(gameId), address, deviceId: knownDeviceId() })
+      .then((next) => {
+        if (cancelled)
+          return
         setSnapshot(next)
-    })
+        setFailed(false)
+      })
+      .catch(() => {
+        if (!cancelled)
+          setFailed(true)
+      })
     return () => {
       cancelled = true
     }
@@ -74,7 +83,7 @@ export function CupSheet({
       <div className="nc-cup-head">
         <div className="nc-cup-head__block">
           <span className="nc-caps">Prize pool</span>
-          <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? cup.prizePoolNim.toLocaleString() : '—'}</span>
+          <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? formatNim(cup.prizePoolNim) : '—'}</span>
         </div>
         <div className="nc-cup-head__block nc-cup-head__block--end">
           <span className="nc-caps">Resets in (UTC)</span>
@@ -83,13 +92,14 @@ export function CupSheet({
       </div>
 
       <ol className="nc-cup-rows" aria-label={`${game.title} top 10`}>
-        {!cup && <li className="nc-cup-row nc-cup-row--loading">Loading today's Cup…</li>}
+        {!cup && <li className="nc-cup-row nc-cup-row--loading">{failed ? "Couldn't load today's Cup." : "Loading today's Cup…"}</li>}
+        {cup && cup.top.length === 0 && <li className="nc-cup-row nc-cup-row--loading">No scores yet today. Be the first.</li>}
         {cup?.top.map(entry => (
           <li key={entry.rank} className={entry.prizeNim ? 'nc-cup-row is-prize' : 'nc-cup-row'}>
             <span className="nc-cup-row__rank">{entry.rank}</span>
             <span className="nc-cup-row__name">{entry.name}</span>
             <span className="nc-cup-row__score nc-num">{entry.score.toLocaleString()}</span>
-            <span className="nc-cup-row__prize">{entry.prizeNim ? `${entry.prizeNim} NIM` : ''}</span>
+            <span className="nc-cup-row__prize">{entry.prizeNim ? `${formatNim(entry.prizeNim)} NIM` : ''}</span>
           </li>
         ))}
       </ol>
