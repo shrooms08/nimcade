@@ -1,15 +1,18 @@
-import { NimcadeIcon } from './NimcadeIcon'
+import wordmarkBlack from './wordmark-black.svg'
+import wordmarkWhite from './wordmark.svg'
 
 /**
- * The Nimcade wordmark: the mark plus the name set in Space Grotesk 700 with
- * the prototype's headline tracking. The prototype ships no wordmark asset, so
- * this is composed from its icon and type.
+ * Wordmark option B ("Swipe") from the UI kit: the swipe chevron and a lowercase
+ * "nimcade", outlined to paths so it never waits on a font.
  */
-export function Wordmark({ size = 40, tone = 'dark' }: { size?: number; tone?: 'dark' | 'light' }) {
+export function Wordmark({ tone = 'white', height = 30, className }: { tone?: 'white' | 'black'; height?: number; className?: string }) {
   return (
-    <span className={`nc-wordmark nc-wordmark--${tone}`} style={{ fontSize: size * 0.9 }} aria-label="Nimcade">
-      <NimcadeIcon size={size} />
-      <span aria-hidden="true">Nimcade</span>
-    </span>
+    <img
+      className={className}
+      src={tone === 'white' ? wordmarkWhite : wordmarkBlack}
+      alt="Nimcade"
+      style={{ height, width: 'auto' }}
+      draggable={false}
+    />
   )
 }

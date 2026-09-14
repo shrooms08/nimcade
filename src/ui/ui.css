@@ -39,50 +39,6 @@ button {
 
 /* Brand ------------------------------------------------------------------ */
 
-.nc-wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.34em;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.nc-wordmark--dark {
-  color: var(--nc-black);
-}
-
-.nc-wordmark--light {
-  color: var(--nc-white);
-}
-
-/* Splash ----------------------------------------------------------------- */
-
-.nc-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: var(--nc-space-3);
-  background-color: var(--nc-white);
-  background-image: radial-gradient(rgba(0, 0, 0, 0.13) 1.2px, transparent 1.2px);
-  background-size: 22px 22px;
-  transition: opacity var(--nc-dur-sheet) var(--nc-ease);
-}
-
-.nc-splash.is-leaving {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.nc-splash__line {
-  font-size: var(--nc-fs-sm);
-  font-weight: 500;
-  color: var(--nc-grey-400);
-}
-
 /* Glass, coin, buttons ----------------------------------------------------- */
 
 .nc-glass {

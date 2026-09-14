@@ -88,7 +88,7 @@ export default function GameCard({
   }, [game.id])
 
   const onCatcherDown = (event: ReactPointerEvent) => {
-    pressRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, at: performance.now(), type: event.pointerType }
+    pressRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, at: event.timeStamp, type: event.pointerType }
   }
 
   const onCatcherUp = (event: ReactPointerEvent) => {
@@ -97,7 +97,9 @@ export default function GameCard({
     if (!press || press.id !== event.pointerId || !current)
       return
     const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y)
-    if (moved > TAP_SLOP_PX || performance.now() - press.at > TAP_MAX_MS)
+    // Timed with the events' own timestamps: a main-thread stall between press and release
+    // (the first WebGL frame, say) delays the handlers, not the finger.
+    if (moved > TAP_SLOP_PX || event.timeStamp - press.at > TAP_MAX_MS)
       return
     onEnterPlay()
     // Two frames: the catcher unmounts and the game's reset-on-active effect runs before the tap lands.

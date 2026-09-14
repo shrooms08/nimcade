@@ -1,0 +1,126 @@
+/*
+ * Startup animation, CSS only. Timeline from mount:
+ *   0-300ms    white screen, dotted grid fades in
+ *   200-700ms  icon scales .6 -> 1 with a soft overshoot; the N fades in 100ms after the square
+ *   600-1000ms wordmark rises 12px and fades in, then "inside Nimiq Pay"
+ *   exit       200ms to black while the icon settles to .9 (added by Splash.tsx, at 1s or later)
+ */
+
+.nc-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background-color: #ffffff;
+}
+
+.nc-splash__grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.18) 1px, transparent 1px);
+  background-size: 22px 22px;
+  animation: nc-splash-in 300ms ease-out both;
+}
+
+.nc-splash__stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.nc-splash__icon {
+  display: block;
+  width: 88px;
+  height: 88px;
+  animation: nc-splash-icon 500ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both;
+}
+
+.nc-splash__square {
+  animation: nc-splash-in 200ms ease-out 200ms both;
+}
+
+.nc-splash__n {
+  animation: nc-splash-in 200ms ease-out 300ms both;
+}
+
+.nc-splash__wordmark {
+  display: block;
+  margin-top: 26px;
+  animation: nc-splash-rise 400ms cubic-bezier(0.2, 0.8, 0.2, 1) 600ms both;
+}
+
+.nc-splash__line {
+  margin-top: 12px;
+  color: #6e6e76;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  animation: nc-splash-in 300ms ease-out 700ms both;
+}
+
+/* Exit: the white turns black, the content goes, then the whole layer fades off the feed below. */
+.nc-splash.is-leaving {
+  pointer-events: none;
+  animation: nc-splash-out 200ms ease-in forwards;
+}
+
+.nc-splash.is-leaving .nc-splash__icon {
+  animation: nc-splash-icon-out 200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.nc-splash.is-leaving .nc-splash__grid,
+.nc-splash.is-leaving .nc-splash__wordmark,
+.nc-splash.is-leaving .nc-splash__line {
+  animation: nc-splash-content-out 120ms ease-in forwards;
+}
+
+@keyframes nc-splash-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes nc-splash-icon {
+  0% { transform: scale(0.6); }
+  65% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes nc-splash-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nc-splash-out {
+  0% { background-color: #ffffff; opacity: 1; }
+  55% { background-color: #000000; opacity: 1; }
+  100% { background-color: #000000; opacity: 0; }
+}
+
+@keyframes nc-splash-content-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes nc-splash-icon-out {
+  from { transform: scale(1); }
+  to { transform: scale(0.9); }
+}
+
+@keyframes nc-splash-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Reduced motion: shown settled, then one 300ms fade; nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .nc-splash * {
+    animation: none !important;
+  }
+
+  .nc-splash.is-leaving {
+    animation: nc-splash-fade-out 300ms ease-out forwards !important;
+  }
+}

@@ -276,3 +276,39 @@
   grid-column: 3;
   grid-row: 2;
 }
+
+/* Loading mark (shared) ------------------------------------------------- */
+
+.nc-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+/* The mono icon as a mask over a moving diagonal highlight. */
+.nc-loading__mark {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.3) 42%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.3) 58%);
+  background-size: 300% 300%;
+  -webkit-mask: url('./ui/brand/icon-mono.svg') center / contain no-repeat;
+  mask: url('./ui/brand/icon-mono.svg') center / contain no-repeat;
+  animation: nc-sheen 1.6s ease-in-out infinite;
+}
+
+.nc-loading__text {
+  color: var(--nc-grey-300);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+@keyframes nc-sheen {
+  0% { background-position: 100% 100%; }
+  70%, 100% { background-position: 0% 0%; }
+}

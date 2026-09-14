@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
+import { LoadingMark } from './shared/LoadingMark'
 import { PreRoll } from './shared/PreRoll'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePreRoll } from './shared/usePreRoll'
@@ -274,7 +275,7 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
             <p ref={bannerRef} className="void-banner" style={{ top: y(MOUTH_Y) }} hidden />
             <PreRoll label={preRollLabel} />
             {round.phase === 'ready' && <p className="game-hint void-hint" style={{ top: y(MOUTH_Y + MOUTH_HALF + 12) }}>Drag to steer · hold BOOST</p>}
-            {sceneLive && !renderer && <div className="void-loading"><span>Loading</span></div>}
+            {sceneLive && !renderer && <LoadingMark />}
           </div>
         </div>
       </div>
