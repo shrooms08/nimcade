@@ -1,59 +1,55 @@
 # Nimcade
 
-Nimcade is a [Nimiq Pay](https://nimiq.com/pay/) mini app that turns micro games into a feed: a vertical, TikTok-style swipe stack where every card is a 10–20 second one-thumb game, and every card has a "Tip 1 NIM" button that pays the game's maker directly from the player's Nimiq Pay wallet. Only the card filling the screen runs — swipe away and the game pauses and resets. This repository is Phase 1: the feed shell, one placeholder game ("Tap Tempo"), wallet connection through `@nimiq/mini-app-sdk`, and a working tip transaction. Best scores are stored per device in `localStorage`; there is no backend.
+Nimcade is a swipe feed of endless arcade micro games that runs inside [Nimiq Pay](https://nimiq.com/pay/) as a mini app. Swipe up for the next game, tap to play, and chase your best score. Every game can be tipped: one tap sends NIM straight from your Nimiq Pay wallet to the game's maker. A Daily Cup ranks the day's best runs per game and pays out from a prize pool.
+
+Only the card on screen runs; swipe away and it pauses and resets. Best scores live on the device, and there is no backend yet: the Daily Cup currently runs on mock data behind a swappable interface ([src/lib/cupMock.ts](src/lib/cupMock.ts)).
+
+## The games
+
+- **Dot Rush**: steer through the maze with the arrow pad, clear every dot and dodge the chasers; grab a NIM coin to turn the tables.
+- **Tower Up**: the crane swings each floor over your tower; hold to lower, release to drop, and stack as high as you can.
+- **The Void**: a 3D tunnel run; drag the ball through the gaps in oncoming gates and hold boost for double points.
+- **Flip Dodge**: tap to flip lanes and dodge the barriers as the road keeps speeding up.
+- **Tap Frenzy**: how many taps can you land in 60 seconds?
+
+## Tech stack
+
+- [Vite](https://vite.dev/), [React 19](https://react.dev/) and TypeScript, styled with plain CSS
+- [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk) for the wallet: `init`, `listAccounts`, `sendBasicTransaction`
+- [Three.js](https://threejs.org/) for The Void, loaded lazily in its own chunk
+- Space Grotesk via [Fontsource](https://fontsource.org/), self-hosted
+- [Vitest](https://vitest.dev/) for unit tests, [oxlint](https://oxc.rs/) for linting
 
 ## Run it locally
 
-Requires Node.js 22+.
+Requires Node.js 22 or newer.
 
 ```bash
 npm install
-cp .env.example .env      # then set VITE_MAKER_ADDRESS to a real Nimiq address
+cp .env.example .env   # set VITE_MAKER_ADDRESS to the Nimiq address that receives tips
 npm run dev
 ```
 
-The dev server binds to `0.0.0.0:5173`, so the app is reachable from a phone on the same Wi-Fi:
-
-- Desktop browser: <http://localhost:5173> — the feed and the game work, the wallet pill shows **Open in Nimiq Pay**.
-- Phone: open **Nimiq Pay → Mini Apps**, enter `http://<your-mac-ip>:5173` in the custom URL field.
-
-Find your Mac's LAN IP with `ipconfig getifaddr en0`, or read the **Network** URL that Vite prints on start.
-
-Tips send real NIM. To test without real funds, switch Nimiq Pay to testnet: long-press the settings button for 10 seconds to reveal the dev menu, pick **Testnet**, then use **Get free NIM**.
+Open <http://localhost:5173>. Everything plays in a desktop browser; the wallet features need Nimiq Pay.
 
 ```bash
-npm run build      # type-check and bundle to dist/
-npm run preview    # serve the production build
+npm test          # unit tests
+npm run build     # type-check and bundle to dist/
+npm run preview   # serve the production build
 npm run lint
+npm run icons     # regenerate the app icons from src/ui/brand/chevron.ts
 ```
 
-## How it fits together
+## Load it in Nimiq Pay
 
-| Path | Role |
-| --- | --- |
-| [src/games/types.ts](src/games/types.ts) | The `Game` interface and the `{ active, onScore }` contract every game implements |
-| [src/games/registry.ts](src/games/registry.ts) | The array of games the feed renders, in order |
-| [src/games/TapTempo.tsx](src/games/TapTempo.tsx) | Placeholder game: tap with the pulsing beat, 10 taps, score 0–100 |
-| [src/components/Feed.tsx](src/components/Feed.tsx) | CSS scroll-snap container; an `IntersectionObserver` marks one card `active` |
-| [src/components/GameCard.tsx](src/components/GameCard.tsx) | Game area, title, maker, best score, tip button |
-| [src/lib/nimiq.ts](src/lib/nimiq.ts) | SDK wrapper: `init()`, `listAccounts()`, `sendBasicTransaction()`, NIM↔Luna |
-| [src/lib/useWallet.ts](src/lib/useWallet.ts) | Connection state machine behind the status pill |
+The dev server listens on your network, so a phone on the same Wi-Fi can reach it.
 
-## Adding a game
+1. Run `npm run dev` and note the **Network** URL Vite prints, for example `http://192.168.1.42:5173`.
+2. Open **Nimiq Pay** on your phone and go to **Mini Apps**.
+3. Enter that address in the **Custom URL** field.
 
-1. Write a component that takes `{ active, onScore }` and pauses **and resets** when `active` is false.
-2. Add an entry to `games` in [src/games/registry.ts](src/games/registry.ts) with a unique `id`, a `title`, a `maker`, and the maker's Nimiq address.
-
-## Approval dialogs
-
-Nimcade asks for the account as soon as Nimiq Pay's provider is ready, so the status pill can show the address without a tap — that means one approval dialog on load. Flip `REQUEST_ACCOUNT_ON_LOAD` to `false` in [src/lib/useWallet.ts](src/lib/useWallet.ts) to turn the pill into a "Connect wallet" button and keep every approval dialog behind an explicit tap. Tips always require a tap.
-
-## Nimiq provider methods used
-
-- `init({ timeout })` — waits for Nimiq Pay to inject the provider (3s here, then the app falls back to browser mode)
-- `listAccounts()` — first address is shown in the status pill
-- `sendBasicTransaction({ recipient, value })` — the tip; `value` is in Luna (1 NIM = 100,000 Luna)
+Tips send real NIM on mainnet. To test without real funds, open the Nimiq Pay menu and long-press the settings button for 10 seconds to reveal the dev menu, switch to **Testnet**, then tap **Get free NIM** on the home screen.
 
 ## License
 
-[MIT](LICENSE)
+MIT, see [LICENSE](LICENSE).
