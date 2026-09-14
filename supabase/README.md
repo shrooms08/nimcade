@@ -47,13 +47,35 @@ Check runs with `select * from cron.job_run_details order by start_time desc lim
 | `CUP_HOT_WALLET_SEED` | pay-cup | The hot wallet key: 64 hex characters read as a private key, or `entropy:<64 hex>` for a wallet's entropy (its first account, `m/44'/242'/0'/0'`) |
 | `NIMIQ_RPC_URL` | record-tip, pay-cup | Optional. Defaults to the public server for the network (`rpc.nimiqwatch.com`, `rpc.testnet.nimiqwatch.com`) |
 
-To keep the seed out of your shell history:
+The seed is never logged or returned. `pay-cup` answers with the hot wallet's address so you can check which account it is.
+
+### Hot wallet key file
+
+Create the hot wallet once with:
 
 ```bash
-read -rs SEED && supabase secrets set CUP_HOT_WALLET_SEED="$SEED"; unset SEED
+node scripts/gen-hot-wallet.mjs
 ```
 
-The seed is never logged or returned. `pay-cup` answers with the hot wallet's address so you can check which account it is.
+It generates a new key pair, writes the private key as 64 hex characters to `~/.nimcade-hot.key` (mode 600, outside the repo) and prints only the address. It refuses to run if that file already exists, so it never replaces a wallet that may hold funds.
+
+- **Set the secret from the file**, without the key touching your screen or shell history:
+
+  ```bash
+  supabase secrets set CUP_HOT_WALLET_SEED="$(cat ~/.nimcade-hot.key)"
+  ```
+
+  Then trigger a dry run and check that the `hotWallet` in the response is the printed address.
+- **Never print, paste, share or commit it.** It lives in your home directory, not the project. Don't copy it into `.env`, `supabase/`, or a chat or ticket. `cat` it only inside `$(...)` as above.
+- **Keep the file private.** `ls -l ~/.nimcade-hot.key` should show `-rw-------`; restore that with `chmod 600 ~/.nimcade-hot.key`.
+- **Back it up offline.** Keep a copy in a password manager or on encrypted storage. Losing the file (and the secret) loses the funds in the wallet.
+- **Keep the balance small.** Fund the address with roughly what the next few days of Cups pay out, and top it up as needed.
+- **Rotating** after a suspected leak:
+  1. Move the file aside (`mv ~/.nimcade-hot.key ~/.nimcade-hot.key.old`) and generate a new wallet.
+  2. Send the remaining NIM from the old address to the new one.
+  3. Set the secret again from the new file.
+  4. Delete the old file once the old address is empty (`rm -P` on macOS).
+- **Testnet and mainnet use the same key format.** Use a separate key file for each network. Move one aside before generating the other, and keep them apart by name.
 
 ## Deploy
 
@@ -84,4 +106,25 @@ curl -X POST "https://<project-ref>.supabase.co/functions/v1/pay-cup?day=2026-09
 
 ## Tips
 
-After a tip, the app posts `{ gameId, txHash, fromWallet, toWallet, amountLuna }` to `record-tip`. The function looks the transaction up until it is in a block (a first try plus up to 5 retries over 15 seconds), then checks that sender, recipient and value match and that the transfer is less than an hour old. If the transaction still isn't in a block it answers `{ ok: false, pending: true }` and the app asks once more 10 seconds later. `tips.tx_hash` is unique, so a replay changes nothing.
+After a tip, the app posts `{ gameId, txHash, fromWallet, toWallet, amountLuna }` to `record-tip`. The function:
+
+1. **Reads the hash.** It accepts what the wallet returned: a transaction hash, or a serialized transaction, which it hashes with `@nimiq/core`. `0x` and any letter case are fine; the RPC server itself only parses bare hex.
+2. **Waits for the block.** A first lookup plus up to 5 retries over 15 seconds.
+3. **Checks the transfer.** Recipient and value must match, and the transfer must be less than an hour old.
+4. **Checks the sender.** It must be `fromWallet`, or a one-off HTLC that `fromWallet` funded. Nimiq Pay pays that way: the wallet funds an HTLC, which sends the payment and returns the change, so the on-chain sender is the HTLC.
+
+If the transaction still isn't in a block, the function answers `{ ok: false, pending: true }` and the app asks once more 10 seconds later. `tips.tx_hash` is unique, so a replay changes nothing.
+
+Every request logs one JSON line per step, under **Edge Functions → record-tip → Logs**:
+
+- `tip`: gameId, txHash, amountLuna and the RPC server's origin
+- `lookup`: each attempt, with `found`, `not found` or the RPC error
+- `decision`: `recorded` (with `replay`), `pending`, or `rejected` with the reason and the mismatching field
+
+Secrets are never logged.
+
+To see what the function sees for a transaction:
+
+```bash
+node scripts/check-tx.mjs <tx-hash or serialized tx> testnet
+```

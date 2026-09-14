@@ -36,6 +36,8 @@ export interface RpcTransaction {
   blockNumber?: number
   timestamp?: number
   from: string
+  /** 0 basic, 1 vesting, 2 HTLC, 3 staking. */
+  fromType?: number
   to: string
   value: number
   executionResult?: boolean
@@ -77,6 +79,8 @@ export function createNimiqRpc(url: string, fetchFn: FetchLike = fetch) {
         throw error
       }
     },
+    /** Up to `max` of an address's most recent transactions, newest first. */
+    getTransactionsByAddress: (address: string, max: number) => call<RpcTransaction[]>('getTransactionsByAddress', [address, max, null]),
     /** Broadcasts a signed transaction (hex); resolves with its hash. */
     sendRawTransaction: (rawTx: string) => call<string>('sendRawTransaction', [rawTx]),
   }
