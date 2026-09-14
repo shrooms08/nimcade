@@ -1,16 +1,7 @@
 import { DrawnCheck, SwipeUpIcon } from '../components/icons'
 import { shortHash } from '../format'
 
-/** The once-per-game hint in the middle of the play area. */
-export function HintPill({ text }: { text: string }) {
-  return (
-    <div className="nc-hint" role="status">
-      <span className="nc-hint__pill">{text}</span>
-    </div>
-  )
-}
-
-/** First-launch nudge above the info card. */
+/** First-launch nudge over the cover art. */
 export function SwipeHint() {
   return (
     <div className="nc-swipe-hint" aria-hidden="true">

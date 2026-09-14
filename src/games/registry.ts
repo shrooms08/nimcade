@@ -14,7 +14,7 @@ const MAKER_ADDRESS
 export const games: Game[] = [
   { id: DOT_RUSH_ID, title: 'Dot Rush', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap the arrows to move', component: DotRush },
   { id: TOWER_UP_ID, title: 'Tower Up', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Hold to lower, release to drop', component: TowerUp },
-  { id: THE_VOID_ID, title: 'The Void', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Drag to steer', component: TheVoid },
+  { id: THE_VOID_ID, title: 'The Void', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Drag to steer', component: TheVoid, preload: () => import('./TheVoidRender') },
   { id: FLIP_DODGE_ID, title: 'Flip Dodge', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap to flip lanes', component: FlipDodge },
   { id: TAP_FRENZY_ID, title: 'Tap Frenzy', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap as fast as you can', component: TapFrenzy },
 ]

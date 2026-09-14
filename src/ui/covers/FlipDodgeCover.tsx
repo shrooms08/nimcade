@@ -3,13 +3,13 @@ import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** Two lanes split by a dashed line, barriers in each, the runner about to flip. */
-export function FlipDodgeCover({ className }: CoverProps) {
+export function FlipDodgeCover(props: CoverProps) {
   return (
     <CoverTile
       game={FLIP_DODGE_ID}
       title="Flip Dodge"
       hook="Two lanes. No mercy."
-      className={className}
+      {...props}
       art={(
         <>
           <rect x="40" y="0" width="100" height="176" fill="#063836" opacity="0.55" />

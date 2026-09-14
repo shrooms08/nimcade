@@ -11,13 +11,13 @@ const FLOORS = [
 ]
 
 /** A crane cable, the floor it carries and a slightly uneven stack of floors with windows. */
-export function TowerUpCover({ className }: CoverProps) {
+export function TowerUpCover(props: CoverProps) {
   return (
     <CoverTile
       game={TOWER_UP_ID}
       title="Tower Up"
       hook="Drop it. Stack it. Climb."
-      className={className}
+      {...props}
       art={(
         <>
           <path d="M96 0v30" stroke="#2b1030" strokeWidth="2" opacity="0.5" />

@@ -25,7 +25,9 @@ export interface Game {
   maker: string
   /** Nimiq user-friendly address the tip is sent to, e.g. "NQ07 0000 ...". */
   makerAddress: string
-  /** First-play hint, shown once per device. */
+  /** The controls in a few words, shown as the cover's "How to play" line. */
   hint: string
+  /** Warms up heavy lazy chunks; the feed calls it when the card is at most one card away. */
+  preload?: () => Promise<unknown>
   component: ComponentType<GameProps>
 }

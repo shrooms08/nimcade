@@ -3,13 +3,13 @@ import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** A tap point with ripples spreading out from it. */
-export function TapFrenzyCover({ className }: CoverProps) {
+export function TapFrenzyCover(props: CoverProps) {
   return (
     <CoverTile
       game={TAP_FRENZY_ID}
       title="Tap Frenzy"
       hook="Sixty seconds. Go."
-      className={className}
+      {...props}
       art={(
         <>
           {[66, 48, 31].map((r, i) => (

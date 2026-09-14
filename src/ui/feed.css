@@ -48,7 +48,43 @@
   opacity: 0;
 }
 
-/* Browse mode: sits over the game; lets vertical swipes scroll the feed, turns taps into play. */
+/* Browse: the game's cover, crossfading with the game mounted underneath. */
+.nc-card__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  transition: opacity var(--nc-dur-chrome) var(--nc-ease);
+}
+
+.nc-card__cover.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nc-card__play-pill {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--nc-info-bottom) + 132px);
+  padding: 8px 16px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-pill);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--nc-white);
+  font-size: var(--nc-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: nc-play-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes nc-play-pulse {
+  0%, 100% { opacity: 0.82; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.06); }
+}
+
+/* Browse mode: sits over the cover; lets vertical swipes scroll the feed, turns taps into play. */
 .nc-card__catcher {
   position: absolute;
   inset: 0;

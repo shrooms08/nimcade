@@ -2,35 +2,11 @@
 
 /* Hints, banners, toasts ----------------------------------------------------------- */
 
-.nc-hint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  z-index: 55;
-  display: flex;
-  justify-content: center;
-  transform: translateY(-50%);
-  pointer-events: none;
-  animation: nc-fade var(--nc-dur-chrome) ease-out;
-}
-
-.nc-hint__pill {
-  padding: 12px 20px;
-  border: 1px solid var(--nc-glass-line);
-  border-radius: var(--nc-radius-pill);
-  background: var(--nc-glass);
-  backdrop-filter: blur(8px) saturate(1.2);
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
-  font-size: var(--nc-fs-md);
-  font-weight: 600;
-}
-
 .nc-swipe-hint {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(var(--nc-info-bottom) + 112px);
+  top: 38%;
   z-index: 45;
   display: flex;
   flex-direction: column;

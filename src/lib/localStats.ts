@@ -8,7 +8,6 @@ const KEYS = {
   plays: (gameId: string) => `nimcade:plays:${gameId}`,
   tips: (gameId: string) => `nimcade:tips:${gameId}`,
   tipsSent: 'nimcade:tips-sent',
-  hintSeen: (gameId: string) => `nimcade:hint-seen:${gameId}`,
   swipeHintSeen: 'nimcade:swipe-hint-seen',
 }
 
@@ -51,8 +50,18 @@ export const localStats = {
     write(KEYS.tips(gameId), String(readNumber(KEYS.tips(gameId)) + nim))
     write(KEYS.tipsSent, String(readNumber(KEYS.tipsSent) + nim))
   },
-  hintSeen: (gameId: string) => readFlag(KEYS.hintSeen(gameId)),
-  markHintSeen: (gameId: string) => write(KEYS.hintSeen(gameId), '1'),
+  /** Removes the per-game hint flags older builds stored; the cover now shows how to play. */
+  forgetHintFlags() {
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('nimcade:hint-seen:'))
+          localStorage.removeItem(key)
+      }
+    }
+    catch {
+      // Storage unavailable: nothing to clean up.
+    }
+  },
   swipeHintSeen: () => readFlag(KEYS.swipeHintSeen),
   markSwipeHintSeen: () => write(KEYS.swipeHintSeen, '1'),
 }

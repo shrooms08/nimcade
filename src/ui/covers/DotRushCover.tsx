@@ -8,13 +8,13 @@ const DOTS = [
 ]
 
 /** Maze walls, a trail of dots, the player block and a red chaser star. */
-export function DotRushCover({ className }: CoverProps) {
+export function DotRushCover(props: CoverProps) {
   return (
     <CoverTile
       game={DOT_RUSH_ID}
       title="Dot Rush"
       hook="Eat. Dodge. Survive."
-      className={className}
+      {...props}
       art={(
         <>
           <g fill="none" stroke="#4f6bff" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round">

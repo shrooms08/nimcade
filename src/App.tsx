@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Feed from './components/Feed'
 import type { FeedHandle } from './components/Feed'
 import GameCard from './components/GameCard'
@@ -14,7 +14,7 @@ import type { GameOverInfo } from './ui/chrome/GameOverOverlay'
 import { InfoCard } from './ui/chrome/InfoCard'
 import { NavDock } from './ui/chrome/NavDock'
 import type { SheetName } from './ui/chrome/NavDock'
-import { HintPill, SwipeHint, TipSuccess, Toast } from './ui/chrome/Overlays'
+import { SwipeHint, TipSuccess, Toast } from './ui/chrome/Overlays'
 import { TopChrome } from './ui/chrome/TopChrome'
 import { copyText } from './ui/clipboard'
 import { chipAddress, makerHandle } from './ui/format'
@@ -25,7 +25,6 @@ import { Splash } from './ui/Splash'
 import { useOnline } from './ui/useOnline'
 import { useTransient } from './ui/useTransient'
 
-const HINT_MS = 2200
 const TIP_SUCCESS_MS = 1800
 const TOAST_MS = 1800
 
@@ -49,7 +48,6 @@ export default function App() {
   const [noProviderDismissed, setNoProviderDismissed] = useState(false)
   const [swipeHint, setSwipeHint] = useState(() => !localStats.swipeHintSeen())
   const [statsVersion, setStatsVersion] = useState(0)
-  const hint = useTransient<string>()
   const toast = useTransient<string>()
   const tipSuccess = useTransient<{ amount: number; maker: string; hash: string }>()
 
@@ -83,21 +81,16 @@ export default function App() {
     dismissSwipeHint()
   }, [dismissSwipeHint])
 
-  const enterPlay = (target: Game) => {
+  useEffect(() => localStats.forgetHintFlags(), [])
+
+  const enterPlay = () => {
     setGameOver(null)
     setSheet(null)
     setMode('play')
     dismissSwipeHint()
-    if (!localStats.hintSeen(target.id)) {
-      localStats.markHintSeen(target.id)
-      hint.show(target.hint, HINT_MS)
-    }
   }
 
-  const exitPlay = () => {
-    setMode('browse')
-    hint.clear()
-  }
+  const exitPlay = () => setMode('browse')
 
   // Game over always drops back to browse, so a swipe works straight away.
   const roundOver = (target: Game, info: GameOverInfo) => {
@@ -105,7 +98,6 @@ export default function App() {
       return
     setGameOver({ gameId: target.id, info })
     setMode('browse')
-    hint.clear()
     setStatsVersion(v => v + 1)
   }
 
@@ -182,9 +174,10 @@ export default function App() {
           <GameCard
             game={g}
             current={i === index}
+            near={Math.abs(i - index) <= 1}
             playing={playing && i === index}
             gameOver={gameOver?.gameId === g.id ? gameOver.info : null}
-            onEnterPlay={() => enterPlay(g)}
+            onEnterPlay={enterPlay}
             onRoundOver={info => roundOver(g, info)}
             onPlayAgain={() => { setGameOver(null); setMode('play') }}
             onTip={openTip}
@@ -205,7 +198,6 @@ export default function App() {
         />
       )}
       {splashDone && swipeHint && !playing && activeSheet === null && gameOver === null && <div className="nc-defer-in"><SwipeHint /></div>}
-      {splashDone && playing && hint.value && <HintPill text={hint.value} />}
       <InfoCard
         game={game}
         best={stats.best}

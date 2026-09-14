@@ -7,29 +7,51 @@ import { localStats } from '../lib/localStats'
 import { readBest, writeBest } from '../lib/scores'
 import { GameOverOverlay } from '../ui/chrome/GameOverOverlay'
 import type { GameOverInfo } from '../ui/chrome/GameOverOverlay'
+import { renderCover } from '../ui/covers'
 import { CardErrorBoundary } from './CardErrorBoundary'
 
 /** A tap is a press and release within this distance and time; anything else is a swipe. */
 const TAP_SLOP_PX = 10
 const TAP_MAX_MS = 250
+/** The cover crossfade. Leaving play, the game stays mounted under the returning cover this long. */
+const COVER_FADE_MS = 200
+/** Give up forwarding the first tap if no game has mounted under the finger by then. */
+const FORWARD_MAX_FRAMES = 20
 
-/** Replays a tap on whatever is under (x, y), so the game receives it as its first input. */
-function forwardTap(x: number, y: number, pointerType: string) {
-  const target = document.elementFromPoint(x, y)
-  if (!target)
-    return
-  const init: PointerEventInit = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerId: 1, pointerType, isPrimary: true, button: 0, buttons: 1 }
-  target.dispatchEvent(new PointerEvent('pointerdown', init))
-  target.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }))
+/**
+ * Replays a tap on the freshly mounted game under (x, y), so it gets it as its first input.
+ * Waits until the game has been under the point for two frames, so its first layout
+ * (canvas size, play area) is done when the tap lands.
+ */
+function forwardTap(stage: HTMLElement | null, x: number, y: number, pointerType: string) {
+  let seen = false
+  let frames = 0
+  function attempt() {
+    const target = document.elementFromPoint(x, y)
+    if (stage && target && stage.contains(target)) {
+      if (seen) {
+        const init: PointerEventInit = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerId: 1, pointerType, isPrimary: true, button: 0, buttons: 1 }
+        target.dispatchEvent(new PointerEvent('pointerdown', init))
+        target.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }))
+        return
+      }
+      seen = true
+    }
+    if (++frames < FORWARD_MAX_FRAMES)
+      requestAnimationFrame(attempt)
+  }
+  requestAnimationFrame(attempt)
 }
 
 /**
- * One card: the game, a tap catcher in browse mode (swipes scroll the feed,
- * a tap enters play and is forwarded to the game), and the game-over overlay.
+ * One card. In browse it shows the game's cover and a tap catcher (swipes scroll the
+ * feed, a tap enters play); the game itself is only mounted in play and while its
+ * game-over overlay shows its last frame.
  */
 export default function GameCard({
   game,
   current,
+  near,
   playing,
   gameOver,
   onEnterPlay,
@@ -43,6 +65,8 @@ export default function GameCard({
   game: Game
   /** The card fills the feed. */
   current: boolean
+  /** The card is at most one card away from the current one. */
+  near: boolean
   /** The card is in play mode. */
   playing: boolean
   gameOver: GameOverInfo | null
@@ -55,11 +79,32 @@ export default function GameCard({
   onReady?: () => void
 }) {
   const [retryKey, setRetryKey] = useState(0)
+  /** Bumped by Play again: the finished game is still mounted (frozen), so a new round needs a fresh one. */
+  const [roundKey, setRoundKey] = useState(0)
+  const showGame = playing || gameOver !== null
+  const [gameMounted, setGameMounted] = useState(showGame)
+  const stageRef = useRef<HTMLDivElement | null>(null)
   const bestRef = useRef(readBest(game.id))
   const lastRoundRef = useRef<{ score: number; previousBest: number } | null>(null)
   const pressRef = useRef<{ id: number; x: number; y: number; at: number; type: string } | null>(null)
   const onRoundOverRef = useRef(onRoundOver)
   const GameComponent = game.component
+
+  // Mount as soon as the game is wanted; unmount only once the cover has faded back in.
+  if (showGame && !gameMounted)
+    setGameMounted(true)
+
+  useEffect(() => {
+    if (showGame || !gameMounted)
+      return
+    const timer = window.setTimeout(() => setGameMounted(false), COVER_FADE_MS)
+    return () => window.clearTimeout(timer)
+  }, [gameMounted, showGame])
+
+  useEffect(() => {
+    if (near)
+      void game.preload?.()
+  }, [game, near])
 
   useEffect(() => {
     onRoundOverRef.current = onRoundOver
@@ -102,21 +147,30 @@ export default function GameCard({
     if (moved > TAP_SLOP_PX || event.timeStamp - press.at > TAP_MAX_MS)
       return
     onEnterPlay()
-    // Two frames: the catcher unmounts and the game's reset-on-active effect runs before the tap lands.
-    const { clientX, clientY } = event
-    requestAnimationFrame(() => requestAnimationFrame(() => forwardTap(clientX, clientY, press.type)))
+    forwardTap(stageRef.current, event.clientX, event.clientY, press.type)
+  }
+
+  const playAgain = () => {
+    setRoundKey(key => key + 1)
+    onPlayAgain()
   }
 
   return (
     <>
-      <div className={playing ? 'nc-card__stage' : 'nc-card__stage is-browsing'}>
-        <RoundReportContext.Provider value={report}>
-          <CardErrorBoundary key={retryKey} title={game.title} onRetry={() => setRetryKey(key => key + 1)}>
-            <GameComponent active={playing} visible={current} onScore={handleScore} />
-          </CardErrorBoundary>
-        </RoundReportContext.Provider>
+      <div ref={stageRef} className={playing ? 'nc-card__stage' : 'nc-card__stage is-browsing'}>
+        {gameMounted && (
+          <RoundReportContext.Provider value={report}>
+            <CardErrorBoundary key={`${retryKey}:${roundKey}`} title={game.title} onRetry={() => setRetryKey(key => key + 1)}>
+              <GameComponent active={showGame} visible={current} onScore={handleScore} />
+            </CardErrorBoundary>
+          </RoundReportContext.Provider>
+        )}
       </div>
-      {!playing && !gameOver && (
+      <div className={showGame ? 'nc-card__cover is-hidden' : 'nc-card__cover'} aria-hidden={showGame}>
+        {renderCover(game.id, { variant: 'full', howToPlay: game.hint })}
+        <span className="nc-card__play-pill">Tap to play</span>
+      </div>
+      {!showGame && (
         <div
           className="nc-card__catcher"
           onPointerDown={onCatcherDown}
@@ -126,7 +180,7 @@ export default function GameCard({
         />
       )}
       {gameOver && current && (
-        <GameOverOverlay info={gameOver} onPlayAgain={onPlayAgain} onTip={onTip} onCup={onCup} onNext={onNext} />
+        <GameOverOverlay info={gameOver} onPlayAgain={playAgain} onTip={onTip} onCup={onCup} onNext={onNext} />
       )}
     </>
   )

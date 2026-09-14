@@ -4,14 +4,14 @@ import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** A square tunnel receding to a point, a soft grey glow and the white ball. */
-export function TheVoidCover({ className }: CoverProps) {
+export function TheVoidCover(props: CoverProps) {
   const glow = useId()
   return (
     <CoverTile
       game={THE_VOID_ID}
       title="The Void"
       hook="Steer through the dark."
-      className={className}
+      {...props}
       art={(
         <>
           <defs>

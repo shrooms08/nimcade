@@ -1,4 +1,5 @@
-import type { ComponentType } from 'react'
+import { createElement } from 'react'
+import type { ComponentType, ReactElement } from 'react'
 import { DOT_RUSH_ID } from '../../games/DotRush'
 import { FLIP_DODGE_ID } from '../../games/FlipDodge'
 import { TAP_FRENZY_ID } from '../../games/TapFrenzy'
@@ -24,4 +25,10 @@ const COVERS: Record<string, ComponentType<CoverProps>> = {
 /** The cover tile for a game, or undefined for a game that has none yet. */
 export function getCover(gameId: string): ComponentType<CoverProps> | undefined {
   return COVERS[gameId]
+}
+
+/** Renders a game's cover, or null for a game without one. */
+export function renderCover(gameId: string, props: CoverProps = {}): ReactElement | null {
+  const Cover = COVERS[gameId]
+  return Cover ? createElement(Cover, props) : null
 }

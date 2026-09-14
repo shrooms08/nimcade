@@ -64,3 +64,53 @@
   --nc-cover-bg: linear-gradient(160deg, #ffc94a 0%, #f6b221 50%, #c98e14 100%);
   color: #171100;
 }
+
+/* Full-bleed: fills a feed card; art and text sit between the top chrome and the info card. */
+.nc-cover--full {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  padding-top: calc(var(--nc-stage-top) + 16px);
+  padding-bottom: calc(var(--nc-info-bottom) + 184px);
+}
+
+/* Fill whatever height is left above the text, regardless of the SVG's own aspect ratio. */
+.nc-cover--full .nc-cover__art {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  height: 0;
+  padding: 0 14cqw;
+}
+
+.nc-cover--full .nc-cover__text {
+  gap: 2.4cqw;
+  padding: 5cqw 8cqw 0;
+}
+
+.nc-cover--full .nc-cover__title {
+  font-size: 11.5cqw;
+}
+
+.nc-cover--full .nc-cover__hook {
+  font-size: 4.6cqw;
+}
+
+.nc-cover__how {
+  margin-top: 2.4cqw;
+  font-size: 3.7cqw;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+.nc-cover__how-label {
+  display: block;
+  margin-bottom: 1cqw;
+  font-size: 2.9cqw;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
