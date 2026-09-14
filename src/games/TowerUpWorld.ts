@@ -61,7 +61,7 @@ export interface Tumble extends Slab { bottom: number; vx: number; vy: number; a
 
 export interface World {
   /** Endless: a round only ends on a complete miss. */
-  status: 'ready' | 'playing' | 'missed'
+  status: 'ready' | 'countdown' | 'playing' | 'missed'
   /** stack[0] is the foundation slab; floors sit on top of it. */
   stack: Slab[]
   load: Load

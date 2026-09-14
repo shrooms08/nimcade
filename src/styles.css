@@ -1,46 +1,98 @@
 /* Game internals (the feed chrome lives in src/ui/). Colours come from src/ui/tokens.css. */
 
-/* Tap Tempo ----------------------------------------------------------- */
+/* Tap Frenzy ---------------------------------------------------------- */
 
-.game {
-  display: grid;
-  gap: 22px;
-  place-items: center;
-  width: 100%;
+.tap-frenzy {
+  position: relative;
 }
 
-.game__hint {
-  margin: 0;
-  min-height: 20px;
-  color: var(--nc-grey-300);
-  font-size: var(--nc-fs-md);
-  font-variant-numeric: tabular-nums;
-}
-
-.tap-tempo__pad {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  padding: 12px 0;
-  touch-action: none;
-}
-
-.tap-tempo__circle {
-  display: grid;
-  place-items: center;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: var(--nc-gold);
-  box-shadow: 0 18px 50px rgba(246, 178, 33, 0.28);
-  will-change: transform;
-}
-
-.tap-tempo__label {
-  color: var(--nc-black);
-  font-size: 34px;
+.tap-frenzy__clock {
+  position: absolute;
+  top: 4%;
+  left: 0;
+  right: 0;
+  color: var(--nc-white);
+  font-size: 64px;
   font-weight: 700;
+  line-height: 1;
+  text-align: center;
   font-variant-numeric: tabular-nums;
+  transition: color var(--nc-dur-chrome) var(--nc-ease);
+}
+
+.tap-frenzy__clock.is-low {
+  color: var(--nc-gold);
+}
+
+.tap-frenzy__count {
+  display: inline-block;
+  color: var(--nc-white);
+  font-size: clamp(96px, 36vw, 168px);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tap-frenzy__count.is-pop {
+  animation: nc-pop var(--nc-dur-pop) ease-out;
+}
+
+.tap-frenzy__ripples {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tap-frenzy__ripple {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  margin: -38px 0 0 -38px;
+  border: 2px solid var(--nc-gold);
+  border-radius: 50%;
+  animation: tap-frenzy-ripple 420ms ease-out forwards;
+}
+
+@keyframes tap-frenzy-ripple {
+  from { opacity: 0.9; transform: scale(0.25); }
+  to { opacity: 0; transform: scale(1.6); }
+}
+
+/* 3-2-1-GO pre-roll (shared) ------------------------------------------ */
+
+/* Upper part of the play area, clear of the centred first-play hint pill. */
+.pre-roll {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding-top: 18%;
+  pointer-events: none;
+}
+
+.pre-roll__label {
+  color: var(--nc-white);
+  font-size: 104px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 6px 28px rgba(0, 0, 0, 0.65);
+  animation: pre-roll-in 600ms var(--nc-ease) both;
+}
+
+.pre-roll__label.is-go {
+  color: var(--nc-gold);
+}
+
+/* Scale-in pop; the last frame stays visible so reduced motion still shows the label. */
+@keyframes pre-roll-in {
+  0% { opacity: 0; transform: scale(0.4); }
+  30% { opacity: 1; transform: scale(1.14); }
+  50% { transform: scale(1); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* Canvas games (shared) ------------------------------------------------ */

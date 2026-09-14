@@ -42,13 +42,15 @@ export const FRAGMENTS = 8
 export const FRAGMENT_MS = 600
 /** Time between the fatal hit and the end panel, so the shatter reads. */
 export const CRASH_HOLD_MS = 450
+/** During the 3-2-1 pre-roll the tunnel drifts at this fraction of stage-1 speed. */
+export const PRE_ROLL_DRIFT = 0.25
 
 export interface Gate { depth: number; solid: boolean[] }
 export interface Fragment { x: number; y: number; vx: number; vy: number; age: number }
 
 export interface World {
   /** Endless: a round only ends on a hit with no shields left. */
-  status: 'ready' | 'playing' | 'crashed'
+  status: 'ready' | 'countdown' | 'playing' | 'crashed'
   ball: { x: number; y: number }
   target: { x: number; y: number }
   /** Nearest first. */
@@ -223,6 +225,16 @@ function resolveGate(world: World, gate: Gate, boosting: boolean) {
   }
 }
 
+/** The ball eases toward the finger, never faster than BALL_MAX_SPEED. */
+function moveBall(world: World, dt: number) {
+  let mx = (world.target.x - world.ball.x) * Math.min(1, dt * BALL_EASE)
+  let my = (world.target.y - world.ball.y) * Math.min(1, dt * BALL_EASE)
+  const moved = Math.hypot(mx, my), cap = BALL_MAX_SPEED * dt
+  if (moved > cap) { mx *= cap / moved; my *= cap / moved }
+  world.ball.x += mx
+  world.ball.y += my
+}
+
 export function step(world: World, dt: number) {
   const ms = dt * 1000
   world.clock += ms
@@ -237,6 +249,12 @@ export function step(world: World, dt: number) {
     world.crashHold = Math.max(0, world.crashHold - ms)
     return
   }
+  if (world.status === 'countdown') {
+    // Pre-roll: the ball can be positioned and the tunnel drifts, but no gates spawn.
+    moveBall(world, dt)
+    world.travel += BASE_APPROACH * PRE_ROLL_DRIFT * dt
+    return
+  }
   if (world.status !== 'playing')
     return
 
@@ -247,12 +265,7 @@ export function step(world: World, dt: number) {
   else if (!world.boostHeld)
     world.boostEnergy = Math.min(1, world.boostEnergy + dt / BOOST_REFILL_SECONDS)
 
-  let mx = (world.target.x - world.ball.x) * Math.min(1, dt * BALL_EASE)
-  let my = (world.target.y - world.ball.y) * Math.min(1, dt * BALL_EASE)
-  const moved = Math.hypot(mx, my), cap = BALL_MAX_SPEED * dt
-  if (moved > cap) { mx *= cap / moved; my *= cap / moved }
-  world.ball.x += mx
-  world.ball.y += my
+  moveBall(world, dt)
 
   world.travel += speed * dt
   if (world.gates.length === 0)

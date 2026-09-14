@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
+import { PreRoll } from './shared/PreRoll'
 import { useGameLoop } from './shared/useGameLoop'
+import { usePreRoll } from './shared/usePreRoll'
 import { useRound } from './shared/useRound'
 import type { VoidRenderer } from './TheVoidRender'
 import {
@@ -52,6 +54,11 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
   const hudRef = useRef({ passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 })
   const steerPointerRef = useRef<number | null>(null)
   const boostPointerRef = useRef<number | null>(null)
+  // 3-2-1-GO before the gates come; until then input only positions the ball.
+  const { label: preRollLabel, start: startPreRoll, cancel: cancelPreRoll } = usePreRoll(() => {
+    if (worldRef.current.status === 'countdown')
+      worldRef.current.status = 'playing'
+  })
 
   useEffect(() => {
     rendererRef.current = renderer
@@ -179,13 +186,14 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
 
   const resetRound = useCallback(() => {
     stop()
+    cancelPreRoll()
     worldRef.current = createWorld()
     hudRef.current = { passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 }
     steerPointerRef.current = null
     boostPointerRef.current = null
     updateHud()
     rendererRef.current?.render(worldRef.current)
-  }, [stop, updateHud])
+  }, [cancelPreRoll, stop, updateHud])
 
   useEffect(() => {
     resetRound()
@@ -212,18 +220,19 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
     catch {
       // Capture is best-effort; moves and releases still arrive while over the surface.
     }
-    if (inBoostButton(...at)) {
-      boostPointerRef.current = event.pointerId
-      setBoost(world, true)
-    }
-    else {
+    if (!inBoostButton(...at)) {
       steerPointerRef.current = event.pointerId
       setTarget(world, ...unitsToPlane(...at))
     }
+    else if (world.status === 'playing') {
+      boostPointerRef.current = event.pointerId
+      setBoost(world, true)
+    }
     if (world.status === 'ready') {
-      world.status = 'playing'
+      world.status = 'countdown'
       round.begin()
       start()
+      startPreRoll()
     }
   }
 
@@ -241,7 +250,6 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
     if (event.pointerId === steerPointerRef.current)
       steerPointerRef.current = null
   }
-
 
   const { x: bx, y: by, r } = BOOST_BUTTON
   return (
@@ -264,6 +272,7 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
               <div ref={boostFillRef} className="void-boost-fill" />
             </div>
             <p ref={bannerRef} className="void-banner" style={{ top: y(MOUTH_Y) }} hidden />
+            <PreRoll label={preRollLabel} />
             {round.phase === 'ready' && <p className="game-hint void-hint" style={{ top: y(MOUTH_Y + MOUTH_HALF + 12) }}>Drag to steer · hold BOOST</p>}
             {sceneLive && !renderer && <div className="void-loading"><span>Loading</span></div>}
           </div>

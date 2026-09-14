@@ -1,6 +1,6 @@
 import DotRush, { DOT_RUSH_ID } from './DotRush'
 import FlipDodge, { FLIP_DODGE_ID } from './FlipDodge'
-import TapTempo, { TAP_TEMPO_ID } from './TapTempo'
+import TapFrenzy, { TAP_FRENZY_ID } from './TapFrenzy'
 import TheVoid, { THE_VOID_ID } from './TheVoid'
 import TowerUp, { TOWER_UP_ID } from './TowerUp'
 import type { Game } from './types'
@@ -16,5 +16,5 @@ export const games: Game[] = [
   { id: TOWER_UP_ID, title: 'Tower Up', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Hold to lower, release to drop', component: TowerUp },
   { id: THE_VOID_ID, title: 'The Void', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Drag to steer', component: TheVoid },
   { id: FLIP_DODGE_ID, title: 'Flip Dodge', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap to flip lanes', component: FlipDodge },
-  { id: TAP_TEMPO_ID, title: 'Tap Tempo', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap on the beat', component: TapTempo },
+  { id: TAP_FRENZY_ID, title: 'Tap Frenzy', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap as fast as you can', component: TapFrenzy },
 ]

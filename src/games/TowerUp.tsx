@@ -4,8 +4,10 @@ import { readBest } from '../lib/scores'
 import { applyShake } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
+import { PreRoll } from './shared/PreRoll'
 import { beginFrame, fillBoard, useCanvasBoard } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
+import { usePreRoll } from './shared/usePreRoll'
 import { useRound } from './shared/useRound'
 import { drawTowerUp, unitsTall } from './TowerUpRender'
 import { createWorld, pressLoad, releaseLoad, step, tumbleDone } from './TowerUpWorld'
@@ -21,6 +23,11 @@ export default function TowerUp({ active, onScore }: GameProps) {
   const bestRef = useRef<HTMLSpanElement | null>(null)
   const bestAtStartRef = useRef(0)
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fillBoard)
+  // 3-2-1-GO before the crane starts moving; presses meanwhile are ignored.
+  const { label: preRollLabel, start: startPreRoll, cancel: cancelPreRoll } = usePreRoll(() => {
+    if (worldRef.current.status === 'countdown')
+      worldRef.current.status = 'playing'
+  })
 
   const draw = useCallback(() => {
     const ctx = beginFrame(canvasRef.current, viewRef.current)
@@ -65,11 +72,12 @@ export default function TowerUp({ active, onScore }: GameProps) {
 
   const resetRound = useCallback(() => {
     stop()
+    cancelPreRoll()
     worldRef.current = createWorld()
     bestAtStartRef.current = readBest(TOWER_UP_ID)
     updateHud()
     draw()
-  }, [draw, stop, updateHud])
+  }, [cancelPreRoll, draw, stop, updateHud])
 
   useEffect(() => {
     resetRound()
@@ -79,7 +87,16 @@ export default function TowerUp({ active, onScore }: GameProps) {
   const press = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation()
     const world = worldRef.current
-    if (!active || (world.status !== 'ready' && world.status !== 'playing'))
+    if (!active)
+      return
+    if (world.status === 'ready') {
+      world.status = 'countdown'
+      round.begin()
+      start()
+      startPreRoll()
+      return
+    }
+    if (world.status !== 'playing')
       return
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
@@ -88,15 +105,9 @@ export default function TowerUp({ active, onScore }: GameProps) {
       // Capture is best-effort; release still arrives via pointerup.
     }
     pressLoad(world)
-    if (world.status === 'ready') {
-      world.status = 'playing'
-      round.begin()
-      start()
-    }
   }
 
   const release = () => releaseLoad(worldRef.current)
-
 
   return (
     <div className="game-shell">
@@ -104,6 +115,7 @@ export default function TowerUp({ active, onScore }: GameProps) {
         <GameHud label="Floors" scoreRef={floorsRef} secondaryLabel="Best" secondaryRef={bestRef} secondaryInitial="0" />
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
+          <PreRoll label={preRollLabel} />
           {round.phase === 'ready' && <p className="game-hint">Hold to lower, release to drop</p>}
         </div>
       </div>
