@@ -25,20 +25,20 @@ const PLAYER_FROM_BOTTOM = 80
 const OBSTACLE_W = 76
 const OBSTACLE_H = 30
 const COIN_SIZE = 56
-/** Road speed at 1x, in units per second. */
-const BASE_SPEED = 105
+/** Road speed at 1x, in units per second. Keeps the 3x flip window at 220ms+. */
+const BASE_SPEED = 116
 /** Speed factor: 1x -> 2.5x over the first 40s, 2.5x -> 3x from 40s to 120s, then holds. */
 const RAMP_FAST_SECONDS = 40
 const RAMP_FAST_FACTOR = 2.5
 const RAMP_SLOW_SECONDS = 120
 const MAX_FACTOR = 3
 /**
- * Row spacing tightens linearly with speed. Flip window between alternating
- * rows = (gap - 2 * HIT_Y) / speed: ~629ms at 1x, 200ms at 2.5x, 152ms at 3x.
- * At 114 units, 5+ rows fit on a 390x700 board.
+ * Row spacing tightens linearly with speed. Flip window between back-to-back
+ * barrier rows = (gap - 2 * HIT_Y) / speed: ~879ms at 1x, ~386ms at 2x, ~221ms
+ * at 3x. About 4 rows fit on a 390x700 board.
  */
-const ROW_GAP_SLOW = 114
-const ROW_GAP_FAST = 96
+const ROW_GAP_SLOW = 150
+const ROW_GAP_FAST = 125
 const FIRST_ROW_Y = -60
 /** When a round starts, rows are already laid out from this far above the critter. */
 const FIRST_ROW_LEAD = 160
@@ -48,8 +48,11 @@ const HIT_X = 50
 const HIT_Y = 24
 const DASH_GAP = 60
 
-/** Obstacle lane per row; the coin takes the other lane. */
-const PATTERNS: (0 | 1)[][] = [[0, 1], [0, 0, 1], [1, 1, 0], [0, 1, 0, 1], [1, 0], [0, 0, 1, 1], [1, 0, 1]]
+/** Rows repeat barrier, barrier, rest: a rest row has coins in both lanes and no barrier. */
+const ROW_CYCLE = 3
+const BARRIER_ROWS_PER_CYCLE = 2
+/** At most this many barrier rows in a row may block the same lane (rest rows don't reset it). */
+const MAX_SAME_LANE = 3
 
 interface Thing { lane: 0 | 1; y: number; kind: 'barrier' | 'coin' }
 
@@ -60,7 +63,10 @@ interface World {
   /** 0 -> 1 through the current flip; 1 when settled. */
   flip: number
   things: Thing[]
-  queue: (0 | 1)[]
+  rowsSpawned: number
+  /** Lane of the last barrier and how many barrier rows in a row have used it. */
+  streakLane: 0 | 1
+  streak: number
   untilRow: number
   distance: number
   score: number
@@ -75,7 +81,7 @@ interface World {
 
 function createWorld(): World {
   return {
-    status: 'ready', lane: 0, flip: 1, things: [], queue: [], untilRow: 0, distance: 0, score: 0,
+    status: 'ready', lane: 0, flip: 1, things: [], rowsSpawned: 0, streakLane: 0, streak: 0, untilRow: 0, distance: 0, score: 0,
     elapsed: 0, seeded: false, pops: [], shake: 0, clock: 0,
   }
 }
@@ -91,6 +97,9 @@ function speedFactor(elapsed: number): number {
 const rowGap = (factor: number) =>
   ROW_GAP_SLOW - (ROW_GAP_SLOW - ROW_GAP_FAST) * ((factor - 1) / (MAX_FACTOR - 1))
 
+/** Time to flip between back-to-back barrier rows in opposite lanes, at a speed factor. */
+const flipWindowMs = (factor: number) => Math.round(((rowGap(factor) - 2 * HIT_Y) / (BASE_SPEED * factor)) * 1000)
+
 /** Game units visible top to bottom for a canvas of this size. */
 const unitsTall = (width: number, height: number) => (width ? height / ((width * ROAD_SHARE) / WORLD_W) : 600)
 
@@ -101,9 +110,16 @@ function playerX(world: World): number {
 }
 
 function spawnRow(world: World, y: number) {
-  if (world.queue.length === 0)
-    world.queue = [...PATTERNS[Math.floor(Math.random() * PATTERNS.length)]]
-  const blocked = world.queue.shift() ?? 0
+  const slot = world.rowsSpawned++ % ROW_CYCLE
+  if (slot >= BARRIER_ROWS_PER_CYCLE) {
+    world.things.push({ lane: 0, y, kind: 'coin' }, { lane: 1, y, kind: 'coin' })
+    return
+  }
+  let blocked: 0 | 1 = Math.random() < 0.5 ? 0 : 1
+  if (blocked === world.streakLane && world.streak >= MAX_SAME_LANE)
+    blocked = blocked === 0 ? 1 : 0
+  world.streak = blocked === world.streakLane ? world.streak + 1 : 1
+  world.streakLane = blocked
   world.things.push({ lane: blocked, y, kind: 'barrier' }, { lane: blocked === 0 ? 1 : 0, y, kind: 'coin' })
 }
 
@@ -246,6 +262,8 @@ export default function FlipDodge({ active, onScore }: GameProps) {
       return
     if (world.status === 'ready') {
       world.status = 'playing'
+      if (import.meta.env.DEV) // stripped from production builds
+        console.info(`[Flip Dodge] flip window: 1x ${flipWindowMs(1)}ms, 2x ${flipWindowMs(2)}ms, 3x ${flipWindowMs(3)}ms`)
       round.begin()
       start()
       return
