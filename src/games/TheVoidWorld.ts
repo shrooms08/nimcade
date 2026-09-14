@@ -22,6 +22,8 @@ export const MAX_SPEED_FACTOR = 2.5
 export const GATE_GAP = 0.5
 export const GATES_PER_STAGE = 10
 export const GATE_POINTS = 10
+/** The pass multiplier grows by 0.1 per clean gate and stops at x5.0 (values in tenths). */
+export const MAX_MULT10 = 50
 export const STAGE_BONUS = 100
 export const START_SHIELDS = 3
 export const MAX_SHIELDS = 5
@@ -210,7 +212,7 @@ function resolveGate(world: World, gate: Gate, boosting: boolean) {
   }
   else {
     world.score += Math.round(GATE_POINTS * (world.mult10 / 10) * (boosting ? BOOST_POINTS : 1))
-    world.mult10 += 1
+    world.mult10 = Math.min(MAX_MULT10, world.mult10 + 1)
     world.passes += 1
     world.pulse = PULSE_MS
   }
