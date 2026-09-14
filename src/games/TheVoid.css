@@ -1,0 +1,163 @@
+/* The Void: an HTML HUD layered over the Three.js canvas. Sizes follow the play area (container units). */
+
+.void-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #000;
+  container-type: size;
+}
+
+.void-scene,
+.void-scene canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.void-scene {
+  pointer-events: none;
+}
+
+.void-mult {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 4.4cqw;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transform-origin: left top;
+  pointer-events: none;
+}
+
+.void-mult.is-pop {
+  animation: void-pop 0.22s ease-out;
+}
+
+@keyframes void-pop {
+  from {
+    transform: scale(1.3);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.void-shields {
+  position: absolute;
+  display: flex;
+  gap: 1.6cqw;
+  pointer-events: none;
+}
+
+.void-pip {
+  width: 3.4cqw;
+  height: 4.4cqw;
+  background: rgba(255, 255, 255, 0.2);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.void-pip.is-full {
+  background: #ffffff;
+}
+
+.void-boost {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 4cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.void-boost.is-on {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: radial-gradient(circle at 50% 35%, #ffffff, #d6d8e0);
+  color: #0c0c10;
+}
+
+.void-boost-bar {
+  position: absolute;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  outline: 1px solid rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+.void-boost-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.75);
+  transform-origin: left center;
+}
+
+.void-boost.is-on ~ .void-boost-bar .void-boost-fill {
+  background: #ffffff;
+}
+
+.void-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 2.6cqw 0;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.6), transparent);
+  color: #ffffff;
+  font-size: 6.6cqw;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-align: center;
+  text-indent: 0.32em;
+  transform: translateY(-50%);
+  pointer-events: none;
+  animation: void-banner 0.8s ease-out both;
+}
+
+@keyframes void-banner {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.void-hint {
+  bottom: auto;
+}
+
+.void-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(110deg, #000000 30%, #16171d 45%, #000000 60%);
+  background-size: 250% 100%;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 3.6cqw;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: void-shimmer 1.1s linear infinite;
+}
+
+@keyframes void-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}

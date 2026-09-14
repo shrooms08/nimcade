@@ -1,77 +1,166 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { applyShake } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
-import { beginFrame, useCanvasBoard } from './shared/useCanvasBoard'
-import type { Fit } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
-import { createRenderer } from './TheVoidRender'
+import type { VoidRenderer } from './TheVoidRender'
 import {
-  AREA_H, AREA_W, crashDone, createWorld, GATES_PER_STAGE, inBoostButton, setBoost, setTarget, step, unitsToPlane,
+  AREA_H, AREA_W, BOOST_BAR, BOOST_BUTTON, crashDone, createWorld, GATES_PER_STAGE, inBoostButton, isBoosting,
+  MAX_SHIELDS, MOUTH_HALF, MOUTH_Y, setBoost, setTarget, START_SHIELDS, step, unitsToPlane,
 } from './TheVoidWorld'
 import type { World } from './TheVoidWorld'
 import type { GameProps } from './types'
+import './TheVoid.css'
 
 export const THE_VOID_ID = 'the-void'
 
-/** The largest 3:4 box that fits the board. */
-const fitArea: Fit = (width, height) => {
-  const w = Math.floor(Math.min(width, (height * AREA_W) / AREA_H))
-  return { width: w, height: Math.floor((w * AREA_H) / AREA_W) }
+/** The Three.js renderer lives in its own lazily loaded chunk; repeat calls share one request. */
+const loadRenderer = () => import('./TheVoidRender')
+
+/** A position or size in game units as a percentage of the play area. */
+const x = (units: number) => `${(units / AREA_W) * 100}%`
+const y = (units: number) => `${(units / AREA_H) * 100}%`
+
+function scrollParent(element: HTMLElement): Element | null {
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY))
+      return parent
+  }
+  return null
 }
 
 export default function TheVoid({ active, onScore }: GameProps) {
   const round = useRound(THE_VOID_ID, active, onScore)
-  const [renderer] = useState(createRenderer)
   const worldRef = useRef<World>(createWorld())
+  const [renderer, setRenderer] = useState<VoidRenderer | null>(null)
+  const rendererRef = useRef<VoidRenderer | null>(null)
+  const shellRef = useRef<HTMLDivElement | null>(null)
+  const boardRef = useRef<HTMLDivElement | null>(null)
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const sceneRef = useRef<HTMLDivElement | null>(null)
   const scoreRef = useRef<HTMLSpanElement | null>(null)
-  const stageRef = useRef<HTMLSpanElement | null>(null)
+  const stageNumberRef = useRef<HTMLSpanElement | null>(null)
   const gateRef = useRef<HTMLSpanElement | null>(null)
-  const passesRef = useRef(0)
+  const multRef = useRef<HTMLSpanElement | null>(null)
+  const shieldsRef = useRef<HTMLSpanElement | null>(null)
+  const boostRef = useRef<HTMLDivElement | null>(null)
+  const boostFillRef = useRef<HTMLDivElement | null>(null)
+  const bannerRef = useRef<HTMLParagraphElement | null>(null)
+  const hudRef = useRef({ passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 })
   const steerPointerRef = useRef<number | null>(null)
   const boostPointerRef = useRef<number | null>(null)
   const surfaceRef = usePlaySurface()
-  const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fitArea)
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current
-    const ctx = beginFrame(canvas, viewRef.current)
-    if (!ctx)
-      return
-    renderer(ctx, viewRef.current, worldRef.current)
-    applyShake(canvas, worldRef.current.shake)
-  }, [canvasRef, viewRef, renderer])
 
   useEffect(() => {
-    onResizeRef.current = draw
-  }, [draw, onResizeRef])
+    rendererRef.current = renderer
+  }, [renderer])
 
-  // Dev-only handle for automated play-testing; stripped from production builds.
+  // Keep the play area the largest 3:4 box that fits the board.
+  useEffect(() => {
+    const board = boardRef.current, stage = stageRef.current
+    if (!board || !stage)
+      return
+    const observer = new ResizeObserver(([entry]) => {
+      const w = Math.floor(Math.min(entry.contentRect.width, (entry.contentRect.height * AREA_W) / AREA_H))
+      stage.style.width = `${w}px`
+      stage.style.height = `${Math.floor((w * AREA_H) / AREA_W)}px`
+    })
+    observer.observe(board)
+    return () => observer.disconnect()
+  }, [])
+
+  // Fetch the renderer chunk once the card is within one screen of the viewport.
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell)
+      return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        void loadRenderer()
+        observer.disconnect()
+      }
+    }, { root: scrollParent(shell), rootMargin: '100% 0px' })
+    observer.observe(shell)
+    return () => observer.disconnect()
+  }, [])
+
+  // A WebGL context only exists while the card is active.
+  useEffect(() => {
+    if (!active)
+      return
+    let cancelled = false
+    let instance: VoidRenderer | null = null
+    loadRenderer()
+      .then(({ createVoidRenderer }) => {
+        if (cancelled || !sceneRef.current)
+          return
+        instance = createVoidRenderer(sceneRef.current)
+        instance.render(worldRef.current)
+        setRenderer(instance)
+      })
+      .catch(() => {
+        // The shimmer stays up; the round still plays.
+      })
+    return () => {
+      cancelled = true
+      instance?.dispose()
+      setRenderer(null)
+    }
+  }, [active])
+
+  // Dev-only handles for automated play-testing; stripped from production builds.
   useEffect(() => {
     if (!import.meta.env.DEV)
       return
     const host = window as typeof window & { __nimcade?: Record<string, () => unknown> }
-    host.__nimcade = { ...host.__nimcade, theVoid: () => worldRef.current }
+    host.__nimcade = { ...host.__nimcade, theVoid: () => worldRef.current, theVoidRenderer: () => rendererRef.current?.stats() ?? null }
   }, [])
 
   const updateHud = useCallback(() => {
-    const world = worldRef.current
-    const set = (element: HTMLSpanElement | null, text: string) => {
-      if (element && element.textContent !== text)
-        element.textContent = text
+    const world = worldRef.current, last = hudRef.current
+    const text = (element: HTMLElement | null, value: string) => {
+      if (element && element.textContent !== value)
+        element.textContent = value
     }
-    set(scoreRef.current, String(world.score))
-    set(stageRef.current, String(world.stage))
-    set(gateRef.current, `${world.gateInStage}/${GATES_PER_STAGE}`)
-    const score = scoreRef.current
-    if (world.passes !== passesRef.current && score) {
-      passesRef.current = world.passes
-      score.classList.remove('is-pop')
-      void score.offsetWidth // restart the pop animation
-      score.classList.add('is-pop')
+    const pop = (element: HTMLElement | null) => {
+      element?.classList.remove('is-pop')
+      void element?.offsetWidth // restart the animation
+      element?.classList.add('is-pop')
+    }
+    text(scoreRef.current, String(world.score))
+    text(stageNumberRef.current, String(world.stage))
+    text(gateRef.current, `${world.gateInStage}/${GATES_PER_STAGE}`)
+    text(multRef.current, `x${(world.mult10 / 10).toFixed(1)}`)
+    if (world.passes !== last.passes) {
+      last.passes = world.passes
+      pop(scoreRef.current)
+      pop(multRef.current)
+    }
+    if (world.shields !== last.shields && shieldsRef.current) {
+      last.shields = world.shields
+      const slots = Math.max(START_SHIELDS, world.shields)
+      Array.from(shieldsRef.current.children).forEach((pip, i) => {
+        ;(pip as HTMLElement).hidden = i >= slots
+        pip.classList.toggle('is-full', i < world.shields)
+      })
+    }
+    const boosting = isBoosting(world)
+    if (boosting !== last.boosting) {
+      last.boosting = boosting
+      boostRef.current?.classList.toggle('is-on', boosting)
+    }
+    if (boostFillRef.current)
+      boostFillRef.current.style.transform = `scaleX(${world.boostEnergy})`
+    const banner = bannerRef.current
+    if (banner && world.banner > 0 && world.bannerStage !== last.bannerStage) {
+      last.bannerStage = world.bannerStage
+      banner.textContent = `STAGE ${world.bannerStage} CLEAR`
+      banner.hidden = false // re-showing restarts the fade in/out
+    }
+    else if (banner && world.banner === 0 && !banner.hidden) {
+      banner.hidden = true
     }
   }, [])
 
@@ -79,7 +168,7 @@ export default function TheVoid({ active, onScore }: GameProps) {
     const world = worldRef.current
     step(world, dt)
     updateHud()
-    draw()
+    rendererRef.current?.render(world)
     // Endless: the only way out is a hit with no shields left.
     if (crashDone(world)) {
       round.finish(world.score, 'Crashed!')
@@ -91,21 +180,21 @@ export default function TheVoid({ active, onScore }: GameProps) {
   const resetRound = useCallback(() => {
     stop()
     worldRef.current = createWorld()
-    passesRef.current = 0
+    hudRef.current = { passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 }
     steerPointerRef.current = null
     boostPointerRef.current = null
     updateHud()
-    draw()
-  }, [draw, stop, updateHud])
+    rendererRef.current?.render(worldRef.current)
+  }, [stop, updateHud])
 
   useEffect(() => {
     resetRound()
     return stop
   }, [active, resetRound, stop])
 
-  /** Pointer position in game units, relative to the canvas (may fall outside it). */
+  /** Pointer position in game units relative to the play area (may fall outside it). */
   const toUnits = (event: ReactPointerEvent): [number, number] | null => {
-    const rect = canvasRef.current?.getBoundingClientRect()
+    const rect = stageRef.current?.getBoundingClientRect()
     if (!rect || rect.width === 0)
       return null
     return [((event.clientX - rect.left) / rect.width) * AREA_W, ((event.clientY - rect.top) / rect.height) * AREA_H]
@@ -139,9 +228,7 @@ export default function TheVoid({ active, onScore }: GameProps) {
   }
 
   const move = (event: ReactPointerEvent) => {
-    if (event.pointerId !== steerPointerRef.current)
-      return
-    const at = toUnits(event)
+    const at = event.pointerId === steerPointerRef.current ? toUnits(event) : null
     if (at)
       setTarget(worldRef.current, ...unitsToPlane(...at))
   }
@@ -160,29 +247,30 @@ export default function TheVoid({ active, onScore }: GameProps) {
     round.clear()
   }
 
+  const { x: bx, y: by, r } = BOOST_BUTTON
   return (
-    <div className="game-shell">
-      <div
-        ref={surfaceRef}
-        className="game-surface"
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-      >
+    <div ref={shellRef} className="game-shell">
+      <div ref={surfaceRef} className="game-surface" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <GameHud
-          label="Score"
-          scoreRef={scoreRef}
-          secondaryLabel="Stage"
-          secondaryRef={stageRef}
-          secondaryInitial="1"
-          tertiaryLabel="Gate"
-          tertiaryRef={gateRef}
-          tertiaryInitial={`0/${GATES_PER_STAGE}`}
+          label="Score" scoreRef={scoreRef}
+          secondaryLabel="Stage" secondaryRef={stageNumberRef} secondaryInitial="1"
+          tertiaryLabel="Gate" tertiaryRef={gateRef} tertiaryInitial={`0/${GATES_PER_STAGE}`}
         />
         <div ref={boardRef} className="game-board">
-          <canvas ref={canvasRef} className="game-canvas" />
-          {round.phase === 'ready' && <p className="game-hint">Drag to steer · hold BOOST</p>}
+          <div ref={stageRef} className="void-stage">
+            <div ref={sceneRef} className="void-scene" />
+            <span ref={multRef} className="void-mult" style={{ left: x(9), top: y(9) }}>x1.0</span>
+            <span ref={shieldsRef} className="void-shields" style={{ right: x(10), top: y(10) }}>
+              {Array.from({ length: MAX_SHIELDS }, (_, i) => <span key={i} className="void-pip" />)}
+            </span>
+            <div ref={boostRef} className="void-boost" style={{ left: x(bx - r), top: y(by - r), width: x(r * 2), height: y(r * 2) }}>BOOST</div>
+            <div className="void-boost-bar" style={{ left: x(BOOST_BAR.x), top: y(BOOST_BAR.y), width: x(BOOST_BAR.w), height: y(BOOST_BAR.h) }}>
+              <div ref={boostFillRef} className="void-boost-fill" />
+            </div>
+            <p ref={bannerRef} className="void-banner" style={{ top: y(MOUTH_Y) }} hidden />
+            {round.phase === 'ready' && <p className="game-hint void-hint" style={{ top: y(MOUTH_Y + MOUTH_HALF + 12) }}>Drag to steer · hold BOOST</p>}
+            {active && !renderer && <div className="void-loading"><span>Loading</span></div>}
+          </div>
         </div>
       </div>
       {round.phase === 'over' && round.result && (
