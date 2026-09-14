@@ -3,14 +3,13 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { COLS, createWorld, position, ROWS, step, WALLS, WAVE_FLASH_MS } from './DotRushWorld'
 import type { World } from './DotRushWorld'
 import { palette, sprites } from './DotRushSprites'
-import { applyShake, drawTint, drawUrgentFlash, FLASH_MS, popLook } from './shared/effects'
+import { applyShake, drawTint, popLook } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { spriteState } from './shared/sprites'
 import type { Dir } from './shared/sprites'
 import { beginFrame, useCanvasBoard } from './shared/useCanvasBoard'
 import type { Fit } from './shared/useCanvasBoard'
-import { useCountdown } from './shared/useCountdown'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
@@ -37,7 +36,6 @@ export default function DotRush({ active, onScore }: GameProps) {
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const bannerRef = useRef<HTMLParagraphElement | null>(null)
   const surfaceRef = usePlaySurface()
-  const countdown = useCountdown()
 
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fitMaze)
 
@@ -71,7 +69,6 @@ export default function DotRush({ active, onScore }: GameProps) {
     const [cx, cy] = position(world.chaser)
     sprites.chaser(ctx, cx * tile, cy * tile, tile, tile, base)
 
-    drawUrgentFlash(ctx, view.width, view.height, world.flash)
     drawTint(ctx, view.width, view.height, '255, 255, 255', (0.85 * world.waveFlash) / WAVE_FLASH_MS)
     applyShake(canvas, world.shake)
   }, [canvasRef, viewRef])
@@ -100,14 +97,12 @@ export default function DotRush({ active, onScore }: GameProps) {
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     step(world, dt)
-    if (countdown.update(world.timeLeft, world.status === 'playing'))
-      world.flash = FLASH_MS
     updateHud()
     draw()
 
-    const caughtAndSettled = world.status === 'caught' && world.shake === 0
-    if (caughtAndSettled || world.status === 'over') {
-      round.finish(world.score, world.status === 'caught' ? 'Caught!' : 'Time!')
+    // Endless: the only way out is capture, once the shake has played.
+    if (world.status === 'caught' && world.shake === 0) {
+      round.finish(world.score, 'Caught!')
       return false
     }
     return true
@@ -116,13 +111,12 @@ export default function DotRush({ active, onScore }: GameProps) {
   const resetRound = useCallback(() => {
     stop()
     worldRef.current = createWorld()
-    countdown.reset()
     updateHud()
     draw()
-  }, [countdown, draw, stop, updateHud])
+  }, [draw, stop, updateHud])
 
   // Pause and fully reset whenever `active` flips; a fresh round waits for
-  // the first d-pad press so the timer never runs unseen.
+  // the first d-pad press so the chaser never moves unseen.
   useEffect(() => {
     resetRound()
     return stop
@@ -132,7 +126,7 @@ export default function DotRush({ active, onScore }: GameProps) {
     event.preventDefault()
     event.stopPropagation()
     const world = worldRef.current
-    if (!active || world.status === 'caught' || world.status === 'over')
+    if (!active || world.status === 'caught')
       return
     world.queued = dir
     if (world.status === 'ready') {
@@ -150,7 +144,7 @@ export default function DotRush({ active, onScore }: GameProps) {
   return (
     <div className="game-shell">
       <div ref={surfaceRef} className="game-surface" onPointerDown={event => event.stopPropagation()}>
-        <GameHud label="Dots" scoreRef={scoreRef} countdownRef={countdown.countdownRef} />
+        <GameHud label="Score" scoreRef={scoreRef} />
 
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
@@ -177,7 +171,7 @@ export default function DotRush({ active, onScore }: GameProps) {
 
       {round.phase === 'over' && round.result && (
         <EndPanel
-          title={round.result.title}
+          reason={round.result.reason}
           score={round.result.score}
           best={round.result.best}
           onPlayAgain={playAgain}

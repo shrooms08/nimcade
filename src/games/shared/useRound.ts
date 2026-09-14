@@ -6,7 +6,8 @@ export type Phase = 'ready' | 'playing' | 'over'
 export interface RoundResult {
   score: number
   best: number
-  title: string
+  /** One line on why the round ended, e.g. "Caught!". */
+  reason: string
 }
 
 /**
@@ -34,10 +35,10 @@ export function useRound(gameId: string, active: boolean, onScore: (score: numbe
 
   /** Ends the round: shows the result and reports the score to the card. */
   const finish = useCallback(
-    (score: number, title: string) => {
+    (score: number, reason: string) => {
       // The card writes the new best after onScore, so compute it here.
       const best = Math.max(readBest(gameId), score)
-      setResult({ score, best, title })
+      setResult({ score, best, reason })
       setPhase('over')
       onScoreRef.current(score)
     },

@@ -1,32 +1,28 @@
 /**
- * End-of-round panel. Marked `data-feed-scroll`, so swiping on it moves the
- * feed even though it sits inside a game stage.
+ * End-of-round panel: why the round ended, the score, and the best. Marked
+ * `data-feed-scroll`, so swiping on it moves the feed even though it sits
+ * inside a game stage.
  */
 export function EndPanel({
-  title,
+  reason,
   score,
   best,
-  detail,
   overlay = true,
   onPlayAgain,
 }: {
-  title?: string
+  /** One line, e.g. "Caught!". */
+  reason: string
   score: number
-  /** Shown as "New best" / "Best N" unless `detail` is given. */
-  best?: number
-  detail?: string
+  best: number
   /** Covers the play area; false renders it in normal flow. */
   overlay?: boolean
   onPlayAgain: () => void
 }) {
-  const line = detail
-    ?? (best === undefined ? '' : score === best && score > 0 ? 'New best' : `Best ${best}`)
-
   return (
     <div className={overlay ? 'game__panel game-end' : 'game__panel'} data-feed-scroll>
-      {title && <p className="game-end__title">{title}</p>}
+      <p className="game-end__title">{reason}</p>
       <p className="game__score">{score}</p>
-      <p className="game__verdict">{line}</p>
+      <p className="game__verdict">{score === best && score > 0 ? 'New best' : `Best ${best}`}</p>
       <button type="button" className="button button--primary" onClick={onPlayAgain}>
         Play again
       </button>

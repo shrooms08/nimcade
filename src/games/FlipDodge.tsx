@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { sprites } from './FlipDodgeSprites'
-import { agePops, applyShake, drawUrgentFlash, FLASH_MS, popLook, ROUND_SECONDS, SHAKE_MS } from './shared/effects'
+import { agePops, applyShake, popLook, SHAKE_MS } from './shared/effects'
 import type { Pop } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { spriteState } from './shared/sprites'
 import { beginFrame, fillBoard, useCanvasBoard } from './shared/useCanvasBoard'
-import { useCountdown } from './shared/useCountdown'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
@@ -24,8 +23,11 @@ const PLAYER_FROM_BOTTOM = 80
 const OBSTACLE_W = 76
 const OBSTACLE_H = 30
 const COIN_SIZE = 56
-/** Road speed at 1x, in units per second; ramps linearly to 2x at the buzzer. */
+/** Road speed at 1x, in units per second. */
 const BASE_SPEED = 240
+/** Speed ramps linearly from 1x to RAMP_MAX over RAMP_SECONDS of play, then holds. */
+const RAMP_MAX = 2.2
+const RAMP_SECONDS = 60
 /** Leaves ~200ms to flip between alternating rows even at 2x. */
 const ROW_GAP = 190
 const FIRST_ROW_Y = -60
@@ -41,7 +43,8 @@ const PATTERNS: (0 | 1)[][] = [[0, 1], [0, 0, 1], [1, 1, 0], [0, 1, 0, 1], [1, 0
 interface Thing { lane: 0 | 1; y: number; kind: 'barrier' | 'coin' }
 
 interface World {
-  status: 'ready' | 'playing' | 'crashed' | 'over'
+  /** Endless: a round only ends on a crash. */
+  status: 'ready' | 'playing' | 'crashed'
   lane: 0 | 1
   /** 0 -> 1 through the current flip; 1 when settled. */
   flip: number
@@ -50,22 +53,21 @@ interface World {
   untilRow: number
   distance: number
   score: number
-  timeLeft: number
+  /** Seconds of play, drives the speed ramp. */
+  elapsed: number
   pops: Pop[]
   shake: number
-  flash: number
   clock: number
 }
 
 function createWorld(): World {
   return {
     status: 'ready', lane: 0, flip: 1, things: [], queue: [], untilRow: 0, distance: 0, score: 0,
-    timeLeft: ROUND_SECONDS, pops: [], shake: 0, flash: 0, clock: 0,
+    elapsed: 0, pops: [], shake: 0, clock: 0,
   }
 }
 
-/** 1x at the start of the round, 2x at the end. */
-const speedFactor = (world: World) => 1 + Math.min(1, (ROUND_SECONDS - world.timeLeft) / ROUND_SECONDS)
+const speedFactor = (world: World) => 1 + (RAMP_MAX - 1) * Math.min(1, world.elapsed / RAMP_SECONDS)
 
 function playerX(world: World): number {
   const from = LANE_X[1 - world.lane]
@@ -83,7 +85,6 @@ function spawnRow(world: World, y: number) {
 function step(world: World, dt: number, viewH: number) {
   const ms = dt * 1000
   world.clock += ms
-  world.flash = Math.max(0, world.flash - ms)
   world.pops = agePops(world.pops, ms)
   if (world.status === 'crashed') {
     world.shake = Math.max(0, world.shake - ms)
@@ -92,7 +93,7 @@ function step(world: World, dt: number, viewH: number) {
   if (world.status !== 'playing')
     return
 
-  world.timeLeft = Math.max(0, world.timeLeft - dt)
+  world.elapsed += dt
   world.flip = Math.min(1, world.flip + dt / FLIP_SECONDS)
   const travel = BASE_SPEED * speedFactor(world) * dt
   world.distance += travel
@@ -121,8 +122,6 @@ function step(world: World, dt: number, viewH: number) {
     thing.y = Number.POSITIVE_INFINITY // collected: drop it on the filter below
   }
   world.things = world.things.filter(thing => thing.y < viewH + OBSTACLE_H * 2)
-  if (world.timeLeft <= 0)
-    world.status = 'over'
 }
 
 export default function FlipDodge({ active, onScore }: GameProps) {
@@ -130,7 +129,6 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const surfaceRef = usePlaySurface()
-  const countdown = useCountdown()
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fillBoard)
 
   const draw = useCallback(() => {
@@ -162,7 +160,6 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     const bob = world.status === 'playing' ? Math.round(Math.sin(world.clock / 70) * 2) : 0
     sprites.player(ctx, ...box(playerX(world), viewH - PLAYER_FROM_BOTTOM + bob, PLAYER_SIZE, PLAYER_SIZE), base)
 
-    drawUrgentFlash(ctx, view.width, view.height, world.flash)
     applyShake(canvas, world.shake)
   }, [canvasRef, viewRef])
 
@@ -174,14 +171,12 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     const world = worldRef.current
     const view = viewRef.current
     step(world, dt, view.width ? view.height / (view.width / WORLD_W) : 600)
-    if (countdown.update(world.timeLeft, world.status === 'playing'))
-      world.flash = FLASH_MS
     if (scoreRef.current)
       scoreRef.current.textContent = String(world.score)
     draw()
 
-    if ((world.status === 'crashed' && world.shake === 0) || world.status === 'over') {
-      round.finish(world.score, world.status === 'crashed' ? 'Crashed!' : 'Time!')
+    if (world.status === 'crashed' && world.shake === 0) {
+      round.finish(world.score, 'Crashed!')
       return false
     }
     return true
@@ -190,11 +185,10 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   const resetRound = useCallback(() => {
     stop()
     worldRef.current = createWorld()
-    countdown.reset()
     if (scoreRef.current)
       scoreRef.current.textContent = '0'
     draw()
-  }, [countdown, draw, stop])
+  }, [draw, stop])
 
   useEffect(() => {
     resetRound()
@@ -227,14 +221,14 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   return (
     <div className="game-shell">
       <div ref={surfaceRef} className="game-surface" onPointerDown={tap}>
-        <GameHud label="Coins" scoreRef={scoreRef} countdownRef={countdown.countdownRef} />
+        <GameHud label="Coins" scoreRef={scoreRef} />
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
           {round.phase === 'ready' && <p className="game-hint">Tap to run, tap to flip lanes</p>}
         </div>
       </div>
       {round.phase === 'over' && round.result && (
-        <EndPanel title={round.result.title} score={round.result.score} best={round.result.best} onPlayAgain={playAgain} />
+        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} onPlayAgain={playAgain} />
       )}
     </div>
   )

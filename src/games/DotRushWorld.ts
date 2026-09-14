@@ -1,4 +1,4 @@
-import { agePops, ROUND_SECONDS, SHAKE_MS } from './shared/effects'
+import { agePops, SHAKE_MS } from './shared/effects'
 import type { Pop } from './shared/effects'
 import type { Dir } from './shared/sprites'
 
@@ -27,8 +27,9 @@ export const ROWS = MAZE.length
 /** Tiles per second. */
 const PLAYER_SPEED = 6
 export const CHASER_SPEED = 5.1
-/** Added to CHASER_SPEED for every wave after the first. */
+/** Added to CHASER_SPEED for every wave after the first, up to CHASER_MAX_SPEED. */
 export const CHASER_SPEED_PER_WAVE = 0.5
+export const CHASER_MAX_SPEED = 8
 const CHASER_RANDOM_TURN = 0.2
 /** Centre-to-centre distance, in tiles, that counts as a capture. */
 const CATCH_DISTANCE = 0.6
@@ -73,7 +74,8 @@ export interface Mover {
   speed: number
 }
 
-export type Status = 'ready' | 'playing' | 'caught' | 'over'
+/** Endless: a round only ends when the chaser catches the player. */
+export type Status = 'ready' | 'playing' | 'caught'
 
 export interface World {
   status: Status
@@ -83,7 +85,6 @@ export interface World {
   score: number
   /** 1 for the first maze, +1 each time every dot is eaten. */
   wave: number
-  timeLeft: number
   player: Mover
   facing: Dir
   queued: Dir | null
@@ -91,7 +92,6 @@ export interface World {
   /** Pops in tile coordinates. */
   pops: Pop[]
   shake: number
-  flash: number
   waveFlash: number
   banner: number
   clock: number
@@ -107,14 +107,12 @@ export function createWorld(): World {
     dotsLeft: DOT_COUNT,
     score: 0,
     wave: 1,
-    timeLeft: ROUND_SECONDS,
     player: createMover(PLAYER_START, PLAYER_SPEED),
     facing: 'right',
     queued: null,
     chaser: createMover(CHASER_START, CHASER_SPEED),
     pops: [],
     shake: 0,
-    flash: 0,
     waveFlash: 0,
     banner: 0,
     clock: 0,
@@ -190,6 +188,9 @@ const chooseChaserDir = (world: World) => (mover: Mover): Dir | null => {
   return pick(options.filter(dir => distanceFor(dir) === shortest))
 }
 
+export const chaserSpeed = (wave: number) =>
+  Math.min(CHASER_MAX_SPEED, CHASER_SPEED + CHASER_SPEED_PER_WAVE * (wave - 1))
+
 /** Every dot eaten: bank the bonus, refill the maze, send both back to start. */
 function clearWave(world: World) {
   world.wave += 1
@@ -197,7 +198,7 @@ function clearWave(world: World) {
   world.dots = freshDots()
   world.dotsLeft = DOT_COUNT
   world.player = createMover(PLAYER_START, PLAYER_SPEED)
-  world.chaser = createMover(CHASER_START, CHASER_SPEED + CHASER_SPEED_PER_WAVE * (world.wave - 1))
+  world.chaser = createMover(CHASER_START, chaserSpeed(world.wave))
   world.waveFlash = WAVE_FLASH_MS
   world.banner = WAVE_BANNER_MS
 }
@@ -205,7 +206,6 @@ function clearWave(world: World) {
 export function step(world: World, dt: number) {
   const ms = dt * 1000
   world.clock += ms
-  world.flash = Math.max(0, world.flash - ms)
   world.waveFlash = Math.max(0, world.waveFlash - ms)
   world.banner = Math.max(0, world.banner - ms)
   world.pops = agePops(world.pops, ms)
@@ -216,8 +216,6 @@ export function step(world: World, dt: number) {
   }
   if (world.status !== 'playing')
     return
-
-  world.timeLeft = Math.max(0, world.timeLeft - dt)
 
   const { player } = world
   // Reversing is always legal, so it applies immediately instead of waiting
@@ -254,8 +252,5 @@ export function step(world: World, dt: number) {
   if (Math.hypot(px - cx, py - cy) < CATCH_DISTANCE) {
     world.status = 'caught'
     world.shake = SHAKE_MS
-  }
-  else if (world.timeLeft <= 0) {
-    world.status = 'over'
   }
 }
