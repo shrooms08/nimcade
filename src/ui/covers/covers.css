@@ -1,0 +1,66 @@
+/* Game cover tiles. Everything inside scales with the tile's width (cqw). */
+
+.nc-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 16px;
+  container-type: inline-size;
+  color: var(--nc-white);
+  background: var(--nc-cover-bg, var(--nc-black));
+  font-family: var(--nc-font);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.nc-cover__art {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.nc-cover__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+  padding: 0 9cqw 9cqw;
+}
+
+.nc-cover__title {
+  font-size: 12.5cqw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.nc-cover__hook {
+  font-size: 6.4cqw;
+  font-weight: 500;
+  line-height: 1.2;
+  opacity: 0.74;
+}
+
+.nc-cover--dot-rush {
+  --nc-cover-bg: linear-gradient(160deg, #22348f 0%, #0c1446 55%, #060a26 100%);
+}
+
+.nc-cover--tower-up {
+  --nc-cover-bg: linear-gradient(180deg, #f07a2b 0%, #b8474a 58%, #5b2150 100%);
+}
+
+.nc-cover--the-void {
+  --nc-cover-bg: radial-gradient(90% 70% at 50% 38%, #2a2a30 0%, #0b0b0e 60%, #030304 100%);
+}
+
+.nc-cover--flip-dodge {
+  --nc-cover-bg: linear-gradient(170deg, #14a89e 0%, #0b6763 55%, #063836 100%);
+}
+
+.nc-cover--tap-frenzy {
+  --nc-cover-bg: linear-gradient(160deg, #ffc94a 0%, #f6b221 50%, #c98e14 100%);
+  color: #171100;
+}
