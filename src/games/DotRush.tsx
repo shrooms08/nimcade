@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { COLS, createWorld, position, ROWS, step, WALLS, WAVE_FLASH_MS } from './DotRushWorld'
+import { isActive } from './DotRushChasers'
+import { COLS, ROWS } from './DotRushLayouts'
+import { position } from './DotRushMovers'
+import { chaserLook, createWorld, step, WAVE_FLASH_MS } from './DotRushWorld'
 import type { World } from './DotRushWorld'
 import { palette, sprites } from './DotRushSprites'
 import { applyShake, drawTint, popLook } from './shared/effects'
@@ -34,6 +37,7 @@ export default function DotRush({ active, onScore }: GameProps) {
   const round = useRound(DOT_RUSH_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
+  const waveRef = useRef<HTMLSpanElement | null>(null)
   const bannerRef = useRef<HTMLParagraphElement | null>(null)
   const surfaceRef = usePlaySurface()
 
@@ -55,19 +59,27 @@ export default function DotRush({ active, onScore }: GameProps) {
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const index = row * COLS + col
-        if (WALLS[index])
+        if (world.layout.walls[index])
           sprites.wall(ctx, col * tile, row * tile, tile, tile, base)
         else if (world.dots[index])
           sprites.dot(ctx, col * tile, row * tile, tile, tile, base)
+        else if (world.coins[index])
+          sprites.coin(ctx, col * tile, row * tile, tile, tile, base)
       }
     }
-    for (const pop of world.pops)
-      sprites.dot(ctx, pop.x * tile, pop.y * tile, tile, tile, { ...base, ...popLook(pop.age) })
+    for (const pop of world.pops) {
+      const sprite = pop.kind === 'dot' ? sprites.dot : pop.kind === 'coin' ? sprites.coin : sprites.chaser
+      sprite(ctx, pop.x * tile, pop.y * tile, tile, tile, { ...base, ...popLook(pop.age), variant: pop.variant })
+    }
 
     const [px, py] = position(world.player)
     sprites.player(ctx, px * tile, py * tile, tile, tile, base)
-    const [cx, cy] = position(world.chaser)
-    sprites.chaser(ctx, cx * tile, cy * tile, tile, tile, base)
+    for (const chaser of world.chasers) {
+      if (!isActive(chaser))
+        continue // eaten: off the board until it respawns
+      const [cx, cy] = position(chaser)
+      sprites.chaser(ctx, cx * tile, cy * tile, tile, tile, { ...base, variant: chaserLook(world, chaser) })
+    }
 
     drawTint(ctx, view.width, view.height, '255, 255, 255', (0.85 * world.waveFlash) / WAVE_FLASH_MS)
     applyShake(canvas, world.shake)
@@ -81,6 +93,8 @@ export default function DotRush({ active, onScore }: GameProps) {
     const world = worldRef.current
     if (scoreRef.current)
       scoreRef.current.textContent = String(world.score)
+    if (waveRef.current)
+      waveRef.current.textContent = String(world.wave)
     const banner = bannerRef.current
     if (banner) {
       const text = `WAVE ${world.wave}`
@@ -116,7 +130,7 @@ export default function DotRush({ active, onScore }: GameProps) {
   }, [draw, stop, updateHud])
 
   // Pause and fully reset whenever `active` flips; a fresh round waits for
-  // the first d-pad press so the chaser never moves unseen.
+  // the first d-pad press so no chaser moves unseen.
   useEffect(() => {
     resetRound()
     return stop
@@ -144,7 +158,7 @@ export default function DotRush({ active, onScore }: GameProps) {
   return (
     <div className="game-shell">
       <div ref={surfaceRef} className="game-surface" onPointerDown={event => event.stopPropagation()}>
-        <GameHud label="Score" scoreRef={scoreRef} />
+        <GameHud label="Score" scoreRef={scoreRef} secondaryLabel="Wave" secondaryRef={waveRef} secondaryInitial="1" />
 
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />

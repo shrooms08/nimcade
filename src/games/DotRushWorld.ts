@@ -1,206 +1,123 @@
+import { createChasers, eatChaser, isActive, moveChaser, tickRespawn } from './DotRushChasers'
+import type { Chaser } from './DotRushChasers'
+import { COLS, layoutForWave } from './DotRushLayouts'
+import type { Layout } from './DotRushLayouts'
+import { advance, canMove, createMover, nearestTile, OPPOSITE, position, reverse } from './DotRushMovers'
+import type { Mover } from './DotRushMovers'
 import { agePops, SHAKE_MS } from './shared/effects'
 import type { Pop } from './shared/effects'
 import type { Dir } from './shared/sprites'
 
-/** '#' wall, '.' dot, ' ' empty, 'P' player start, 'C' chaser start. */
-export const MAZE = [
-  '###########',
-  '#....#....#',
-  '#.##.#.##.#',
-  '#....C....#',
-  '#.#.###.#.#',
-  '#.#..#..#.#',
-  '#.##.#.##.#',
-  '#.........#',
-  '#.###.###.#',
-  '#...#.#...#',
-  '###.#.#.###',
-  '#.........#',
-  '#.##.#.##.#',
-  '#....P....#',
-  '###########',
-]
-
-export const COLS = MAZE[0].length
-export const ROWS = MAZE.length
-
 /** Tiles per second. */
 const PLAYER_SPEED = 6
-export const CHASER_SPEED = 5.1
-/** Added to CHASER_SPEED for every wave after the first, up to CHASER_MAX_SPEED. */
-export const CHASER_SPEED_PER_WAVE = 0.5
-export const CHASER_MAX_SPEED = 8
-const CHASER_RANDOM_TURN = 0.2
-/** Centre-to-centre distance, in tiles, that counts as a capture. */
+/** Centre-to-centre distance, in tiles, that counts as touching. */
 const CATCH_DISTANCE = 0.6
-export const WAVE_BONUS = 10
+export const COIN_POINTS = 20
+export const SPOOKED_MS = 6000
+/** The spooked look flashes for this long before it wears off. */
+export const SPOOK_WARNING_MS = 1500
+const SPOOK_FLASH_PERIOD_MS = 150
+/** Points for the 1st, 2nd and 3rd spooked chaser eaten in one power window. */
+export const EAT_CHAIN = [50, 100, 200]
+/** Clearing wave N adds this times N. */
+export const WAVE_BONUS_PER_WAVE = 10
 export const WAVE_FLASH_MS = 100
 export const WAVE_BANNER_MS = 600
 
-const VECTORS: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }
-export const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' }
-const DIRECTIONS: Dir[] = ['up', 'left', 'down', 'right']
-
-export const WALLS = MAZE.flatMap(row => [...row].map(ch => ch === '#'))
-const freshDots = () => MAZE.flatMap(row => [...row].map(ch => ch === '.'))
-export const DOT_COUNT = freshDots().filter(Boolean).length
-
-function findStart(marker: string): [number, number] {
-  const row = MAZE.findIndex(line => line.includes(marker))
-  if (row === -1)
-    throw new Error(`Dot Rush maze is missing its '${marker}' start tile`)
-  return [MAZE[row].indexOf(marker), row]
-}
-
-const PLAYER_START = findStart('P')
-const CHASER_START = findStart('C')
-
-const isOpen = (col: number, row: number) =>
-  col >= 0 && col < COLS && row >= 0 && row < ROWS && !WALLS[row * COLS + col]
-
-function canMove(col: number, row: number, dir: Dir): boolean {
-  const [dx, dy] = VECTORS[dir]
-  return isOpen(col + dx, row + dy)
-}
-
-/** Moves tile to tile: at `t = 0` it sits on (col, row), at `t = 1` on (toCol, toRow). */
-export interface Mover {
-  col: number
-  row: number
-  toCol: number
-  toRow: number
-  t: number
-  dir: Dir | null
-  speed: number
-}
-
-/** Endless: a round only ends when the chaser catches the player. */
+/** Endless: a round only ends when a normal chaser touches the player. */
 export type Status = 'ready' | 'playing' | 'caught'
+
+export interface ScorePop extends Pop {
+  kind: 'dot' | 'coin' | 'chaser'
+  variant: number
+}
 
 export interface World {
   status: Status
+  wave: number
+  layout: Layout
   dots: boolean[]
   dotsLeft: number
-  /** Dots eaten plus WAVE_BONUS per cleared wave. */
+  coins: boolean[]
   score: number
-  /** 1 for the first maze, +1 each time every dot is eaten. */
-  wave: number
   player: Mover
   facing: Dir
   queued: Dir | null
-  chaser: Mover
+  chasers: Chaser[]
+  /** Time left in the current power window; 0 when nothing is spooked. */
+  spookedMs: number
+  /** Spooked chasers eaten in the current power window. */
+  chain: number
   /** Pops in tile coordinates. */
-  pops: Pop[]
+  pops: ScorePop[]
   shake: number
   waveFlash: number
   banner: number
   clock: number
 }
 
-const createMover = ([col, row]: [number, number], speed: number): Mover =>
-  ({ col, row, toCol: col, toRow: row, t: 0, dir: null, speed })
+/** Everything that resets when a wave starts: maze, dots, coins, positions, chasers. */
+function waveState(wave: number) {
+  const layout = layoutForWave(wave)
+  return {
+    wave,
+    layout,
+    dots: [...layout.dots],
+    dotsLeft: layout.dotCount,
+    coins: [...layout.coins],
+    player: createMover(layout.playerStart, PLAYER_SPEED),
+    chasers: createChasers(layout, wave),
+    spookedMs: 0,
+    chain: 0,
+  }
+}
 
 export function createWorld(): World {
   return {
     status: 'ready',
-    dots: freshDots(),
-    dotsLeft: DOT_COUNT,
     score: 0,
-    wave: 1,
-    player: createMover(PLAYER_START, PLAYER_SPEED),
     facing: 'right',
     queued: null,
-    chaser: createMover(CHASER_START, CHASER_SPEED),
     pops: [],
     shake: 0,
     waveFlash: 0,
     banner: 0,
     clock: 0,
+    ...waveState(1),
   }
 }
 
-export function position(mover: Mover): [number, number] {
-  return [mover.col + (mover.toCol - mover.col) * mover.t, mover.row + (mover.toRow - mover.row) * mover.t]
-}
-
-/** The tile the mover mostly overlaps. */
-const nearestTile = (mover: Mover): [number, number] =>
-  mover.t >= 0.5 ? [mover.toCol, mover.toRow] : [mover.col, mover.row]
-
-function setHeading(mover: Mover, dir: Dir) {
-  const [dx, dy] = VECTORS[dir]
-  mover.dir = dir
-  mover.toCol = mover.col + dx
-  mover.toRow = mover.row + dy
-}
-
-/** `choose` runs every time the mover lands on a tile; null stops it there. */
-function advance(mover: Mover, dt: number, choose: (mover: Mover) => Dir | null) {
-  if (mover.dir === null) {
-    const next = choose(mover)
-    if (next === null)
-      return
-    setHeading(mover, next)
-    mover.t = 0
-  }
-  mover.t += mover.speed * dt
-  while (mover.t >= 1) {
-    mover.col = mover.toCol
-    mover.row = mover.toRow
-    mover.t -= 1
-    const next = choose(mover)
-    if (next === null) {
-      mover.dir = null
-      mover.t = 0
-      return
-    }
-    setHeading(mover, next)
-  }
+/** Sprite variant for a chaser: its own colour, spooked blue, or the wear-off flash. */
+export function chaserLook(world: World, chaser: Chaser): number {
+  if (!chaser.spooked)
+    return chaser.id
+  const warning = world.spookedMs <= SPOOK_WARNING_MS
+  return warning && Math.floor(world.spookedMs / SPOOK_FLASH_PERIOD_MS) % 2 === 0 ? 4 : 3
 }
 
 const choosePlayerDir = (world: World) => (mover: Mover): Dir | null => {
-  if (world.queued && canMove(mover.col, mover.row, world.queued))
+  if (world.queued && canMove(world.layout, mover.col, mover.row, world.queued))
     return world.queued
-  if (mover.dir && canMove(mover.col, mover.row, mover.dir))
+  if (mover.dir && canMove(world.layout, mover.col, mover.row, mover.dir))
     return mover.dir
   return null
 }
 
-const chooseChaserDir = (world: World) => (mover: Mover): Dir | null => {
-  const back = mover.dir ? OPPOSITE[mover.dir] : null
-  const options = DIRECTIONS.filter(dir => dir !== back && canMove(mover.col, mover.row, dir))
-  if (options.length === 0)
-    return back
-  if (options.length === 1)
-    return options[0]
-
-  // An intersection: usually close in, sometimes wander.
-  const pick = (dirs: Dir[]) => dirs[Math.floor(Math.random() * dirs.length)]
-  if (Math.random() < CHASER_RANDOM_TURN)
-    return pick(options)
-
-  const [targetCol, targetRow] = nearestTile(world.player)
-  const distanceFor = (dir: Dir) => {
-    const [dx, dy] = VECTORS[dir]
-    return Math.abs(mover.col + dx - targetCol) + Math.abs(mover.row + dy - targetRow)
-  }
-  const shortest = Math.min(...options.map(distanceFor))
-  return pick(options.filter(dir => distanceFor(dir) === shortest))
-}
-
-export const chaserSpeed = (wave: number) =>
-  Math.min(CHASER_MAX_SPEED, CHASER_SPEED + CHASER_SPEED_PER_WAVE * (wave - 1))
-
-/** Every dot eaten: bank the bonus, refill the maze, send both back to start. */
 function clearWave(world: World) {
-  world.wave += 1
-  world.score += WAVE_BONUS
-  world.dots = freshDots()
-  world.dotsLeft = DOT_COUNT
-  world.player = createMover(PLAYER_START, PLAYER_SPEED)
-  world.chaser = createMover(CHASER_START, chaserSpeed(world.wave))
+  world.score += WAVE_BONUS_PER_WAVE * world.wave
+  Object.assign(world, waveState(world.wave + 1))
   world.waveFlash = WAVE_FLASH_MS
   world.banner = WAVE_BANNER_MS
+}
+
+/** A NIM coin: every chaser on the board is spooked, and the window and chain start over. */
+function spook(world: World) {
+  world.spookedMs = SPOOKED_MS
+  world.chain = 0
+  for (const chaser of world.chasers) {
+    if (isActive(chaser))
+      chaser.spooked = true
+  }
 }
 
 export function step(world: World, dt: number) {
@@ -217,40 +134,59 @@ export function step(world: World, dt: number) {
   if (world.status !== 'playing')
     return
 
-  const { player } = world
-  // Reversing is always legal, so it applies immediately instead of waiting
-  // for the next tile — otherwise backing away from the chaser feels laggy.
-  if (player.dir && world.queued === OPPOSITE[player.dir]) {
-    ;[player.col, player.toCol] = [player.toCol, player.col]
-    ;[player.row, player.toRow] = [player.toRow, player.row]
-    player.t = 1 - player.t
-    player.dir = world.queued
+  if (world.spookedMs > 0) {
+    world.spookedMs = Math.max(0, world.spookedMs - ms)
+    if (world.spookedMs === 0) {
+      world.chain = 0
+      for (const chaser of world.chasers) chaser.spooked = false
+    }
   }
+  for (const chaser of world.chasers) tickRespawn(chaser, ms)
+
+  const { player } = world
+  if (player.dir && world.queued === OPPOSITE[player.dir])
+    reverse(player)
   advance(player, dt, choosePlayerDir(world))
   if (player.dir)
     world.facing = player.dir
 
-  const [eatCol, eatRow] = nearestTile(player)
-  const index = eatRow * COLS + eatCol
+  const [col, row] = nearestTile(player)
+  const index = row * COLS + col
   if (world.dots[index]) {
     world.dots[index] = false
     world.dotsLeft -= 1
     world.score += 1
-    world.pops.push({ x: eatCol, y: eatRow, age: 0 })
+    world.pops.push({ x: col, y: row, age: 0, kind: 'dot', variant: 0 })
     if (world.dotsLeft === 0) {
-      // Both movers start the new wave exactly on their start tiles, so
-      // nothing else moves this frame.
+      // Everyone starts the next wave exactly on their start tiles, so nothing else moves this frame.
       clearWave(world)
       return
     }
   }
+  if (world.coins[index]) {
+    world.coins[index] = false
+    world.score += COIN_POINTS
+    world.pops.push({ x: col, y: row, age: 0, kind: 'coin', variant: 0 })
+    spook(world)
+  }
 
-  advance(world.chaser, dt, chooseChaserDir(world))
+  for (const chaser of world.chasers) moveChaser(world.layout, chaser, dt, player)
 
-  const [px, py] = position(world.player)
-  const [cx, cy] = position(world.chaser)
-  if (Math.hypot(px - cx, py - cy) < CATCH_DISTANCE) {
-    world.status = 'caught'
-    world.shake = SHAKE_MS
+  const [px, py] = position(player)
+  for (const chaser of world.chasers) {
+    if (!isActive(chaser))
+      continue
+    const [cx, cy] = position(chaser)
+    if (Math.hypot(px - cx, py - cy) >= CATCH_DISTANCE)
+      continue
+    if (!chaser.spooked) {
+      world.status = 'caught'
+      world.shake = SHAKE_MS
+      return
+    }
+    world.score += EAT_CHAIN[Math.min(world.chain, EAT_CHAIN.length - 1)]
+    world.chain += 1
+    world.pops.push({ x: cx, y: cy, age: 0, kind: 'chaser', variant: 3 })
+    eatChaser(chaser)
   }
 }

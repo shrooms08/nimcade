@@ -350,6 +350,10 @@ button {
   gap: 6px;
 }
 
+.game-stat--end {
+  margin-left: auto;
+}
+
 .game-stat__label {
   color: var(--text-dim);
   font-size: 12px;
