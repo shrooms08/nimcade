@@ -14,8 +14,10 @@ import type { GameProps } from './types'
 
 export const FLIP_DODGE_ID = 'flip-dodge'
 
-/** Game units: the canvas is always WORLD_W units wide, split into two lanes. */
+/** Game units: the road is always WORLD_W units wide, split into two lanes. */
 const WORLD_W = 200
+/** Share of the canvas width the road takes, centred; the rest is dark margin. */
+const ROAD_SHARE = 0.6
 const LANE_X = [50, 150]
 const PLAYER_SIZE = 56
 /** Player centre, measured up from the bottom of the board. */
@@ -24,17 +26,26 @@ const OBSTACLE_W = 76
 const OBSTACLE_H = 30
 const COIN_SIZE = 56
 /** Road speed at 1x, in units per second. */
-const BASE_SPEED = 240
-/** Speed ramps linearly from 1x to RAMP_MAX over RAMP_SECONDS of play, then holds. */
-const RAMP_MAX = 2.2
-const RAMP_SECONDS = 60
-/** Leaves ~200ms to flip between alternating rows even at 2x. */
-const ROW_GAP = 190
+const BASE_SPEED = 105
+/** Speed factor: 1x -> 2.5x over the first 40s, 2.5x -> 3x from 40s to 120s, then holds. */
+const RAMP_FAST_SECONDS = 40
+const RAMP_FAST_FACTOR = 2.5
+const RAMP_SLOW_SECONDS = 120
+const MAX_FACTOR = 3
+/**
+ * Row spacing tightens linearly with speed. Flip window between alternating
+ * rows = (gap - 2 * HIT_Y) / speed: ~629ms at 1x, 200ms at 2.5x, 152ms at 3x.
+ * At 114 units, 5+ rows fit on a 390x700 board.
+ */
+const ROW_GAP_SLOW = 114
+const ROW_GAP_FAST = 96
 const FIRST_ROW_Y = -60
+/** When a round starts, rows are already laid out from this far above the critter. */
+const FIRST_ROW_LEAD = 160
 const FLIP_SECONDS = 0.1
 /** How close (in units) the player and an object must be to touch. */
 const HIT_X = 50
-const HIT_Y = 32
+const HIT_Y = 24
 const DASH_GAP = 60
 
 /** Obstacle lane per row; the coin takes the other lane. */
@@ -55,6 +66,8 @@ interface World {
   score: number
   /** Seconds of play, drives the speed ramp. */
   elapsed: number
+  /** Rows ahead are laid out on the first playing frame, once the board height is known. */
+  seeded: boolean
   pops: Pop[]
   shake: number
   clock: number
@@ -63,11 +76,23 @@ interface World {
 function createWorld(): World {
   return {
     status: 'ready', lane: 0, flip: 1, things: [], queue: [], untilRow: 0, distance: 0, score: 0,
-    elapsed: 0, pops: [], shake: 0, clock: 0,
+    elapsed: 0, seeded: false, pops: [], shake: 0, clock: 0,
   }
 }
 
-const speedFactor = (world: World) => 1 + (RAMP_MAX - 1) * Math.min(1, world.elapsed / RAMP_SECONDS)
+function speedFactor(elapsed: number): number {
+  if (elapsed <= RAMP_FAST_SECONDS)
+    return 1 + (RAMP_FAST_FACTOR - 1) * (elapsed / RAMP_FAST_SECONDS)
+  if (elapsed <= RAMP_SLOW_SECONDS)
+    return RAMP_FAST_FACTOR + (MAX_FACTOR - RAMP_FAST_FACTOR) * ((elapsed - RAMP_FAST_SECONDS) / (RAMP_SLOW_SECONDS - RAMP_FAST_SECONDS))
+  return MAX_FACTOR
+}
+
+const rowGap = (factor: number) =>
+  ROW_GAP_SLOW - (ROW_GAP_SLOW - ROW_GAP_FAST) * ((factor - 1) / (MAX_FACTOR - 1))
+
+/** Game units visible top to bottom for a canvas of this size. */
+const unitsTall = (width: number, height: number) => (width ? height / ((width * ROAD_SHARE) / WORLD_W) : 600)
 
 function playerX(world: World): number {
   const from = LANE_X[1 - world.lane]
@@ -93,9 +118,18 @@ function step(world: World, dt: number, viewH: number) {
   if (world.status !== 'playing')
     return
 
+  if (!world.seeded) {
+    world.seeded = true
+    const gap = rowGap(1)
+    let y = viewH - PLAYER_FROM_BOTTOM - FIRST_ROW_LEAD
+    for (; y >= FIRST_ROW_Y; y -= gap) spawnRow(world, y)
+    world.untilRow = FIRST_ROW_Y - y // distance until the next row reaches the spawn line
+  }
+
   world.elapsed += dt
   world.flip = Math.min(1, world.flip + dt / FLIP_SECONDS)
-  const travel = BASE_SPEED * speedFactor(world) * dt
+  const factor = speedFactor(world.elapsed)
+  const travel = BASE_SPEED * factor * dt
   world.distance += travel
   for (const thing of world.things)
     thing.y += travel
@@ -103,7 +137,7 @@ function step(world: World, dt: number, viewH: number) {
   world.untilRow -= travel
   while (world.untilRow <= 0) {
     spawnRow(world, FIRST_ROW_Y + world.untilRow)
-    world.untilRow += ROW_GAP
+    world.untilRow += rowGap(factor)
   }
 
   const px = playerX(world)
@@ -128,6 +162,7 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   const round = useRound(FLIP_DODGE_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
+  const speedRef = useRef<HTMLSpanElement | null>(null)
   const surfaceRef = usePlaySurface()
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fillBoard)
 
@@ -139,12 +174,16 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     if (!ctx)
       return
 
-    const k = view.width / WORLD_W
+    const roadW = view.width * ROAD_SHARE
+    const roadLeft = (view.width - roadW) / 2
+    const k = roadW / WORLD_W
     const viewH = view.height / k
     const base = spriteState(world.clock, { facing: 'up' })
-    const box = (cx: number, cy: number, w: number, h: number) => [(cx - w / 2) * k, (cy - h / 2) * k, w * k, h * k] as const
+    const box = (cx: number, cy: number, w: number, h: number) =>
+      [roadLeft + (cx - w / 2) * k, (cy - h / 2) * k, w * k, h * k] as const
 
-    sprites.road(ctx, 0, 0, view.width, view.height, { ...base, variant: world.distance * k })
+    sprites.margin(ctx, 0, 0, view.width, view.height, base)
+    sprites.road(ctx, roadLeft, 0, roadW, view.height, { ...base, variant: world.distance * k })
     for (let y = (world.distance % DASH_GAP) - DASH_GAP; y < viewH; y += DASH_GAP)
       sprites.dash(ctx, ...box(WORLD_W / 2, y, 3, DASH_GAP / 2), base)
 
@@ -170,9 +209,12 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     const view = viewRef.current
-    step(world, dt, view.width ? view.height / (view.width / WORLD_W) : 600)
+    step(world, dt, unitsTall(view.width, view.height))
     if (scoreRef.current)
       scoreRef.current.textContent = String(world.score)
+    const speed = `x${speedFactor(world.elapsed).toFixed(1)}`
+    if (speedRef.current && speedRef.current.textContent !== speed)
+      speedRef.current.textContent = speed
     draw()
 
     if (world.status === 'crashed' && world.shake === 0) {
@@ -187,6 +229,8 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     worldRef.current = createWorld()
     if (scoreRef.current)
       scoreRef.current.textContent = '0'
+    if (speedRef.current)
+      speedRef.current.textContent = 'x1.0'
     draw()
   }, [draw, stop])
 
@@ -221,7 +265,7 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   return (
     <div className="game-shell">
       <div ref={surfaceRef} className="game-surface" onPointerDown={tap}>
-        <GameHud label="Coins" scoreRef={scoreRef} />
+        <GameHud label="Coins" scoreRef={scoreRef} secondaryLabel="Speed" secondaryRef={speedRef} secondaryInitial="x1.0" />
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
           {round.phase === 'ready' && <p className="game-hint">Tap to run, tap to flip lanes</p>}

@@ -3,6 +3,12 @@ import type { Sprite } from './shared/sprites'
 
 export { imageSprite } from './shared/sprites'
 
+/** The dark verge either side of the road. */
+const margin: Sprite = (ctx, x, y, width, height) => {
+  ctx.fillStyle = '#090b1d'
+  ctx.fillRect(x, y, width, height)
+}
+
 /** Asphalt with scrolling kerb stripes; `variant` is the distance travelled. */
 const road: Sprite = (ctx, x, y, width, height, state) => {
   ctx.fillStyle = '#161a3a'
@@ -62,7 +68,8 @@ const coin: Sprite = (ctx, x, y, width, height, state) => {
 }
 
 /** Swap any entry for `imageSprite('/sprites/…png', fallback)` to use pixel art. */
-export const sprites: Record<'road' | 'dash' | 'barrier' | 'coin' | 'player', Sprite> = {
+export const sprites: Record<'margin' | 'road' | 'dash' | 'barrier' | 'coin' | 'player', Sprite> = {
+  margin,
   road,
   dash,
   barrier,
