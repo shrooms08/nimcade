@@ -16,6 +16,10 @@ export interface SpriteState {
   facing: Dir
   /** Free per-game index, e.g. a colour step for stacked blocks. */
   variant: number
+  /** Free per-game quantity, e.g. windows on a floor or a floor number. */
+  count: number
+  /** Highlight strength, 0 (none) to 1 (full), e.g. lit windows. */
+  glow: number
 }
 
 /** Draws one sprite into the box whose top-left corner is (x, y), in CSS px. */
@@ -29,7 +33,7 @@ export type Sprite = (
 ) => void
 
 export function spriteState(time: number, patch: Partial<SpriteState> = {}): SpriteState {
-  return { time, scale: 1, alpha: 1, facing: 'up', variant: 0, ...patch }
+  return { time, scale: 1, alpha: 1, facing: 'up', variant: 0, count: 0, glow: 0, ...patch }
 }
 
 /**
