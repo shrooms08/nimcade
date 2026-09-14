@@ -200,3 +200,8 @@ button {
   font-weight: 500;
   color: var(--nc-grey-300);
 }
+
+/* Chrome that mounts after the splash (wallet chip, banners, hints) fades in instead of popping. */
+.nc-defer-in {
+  animation: nc-fade 150ms ease-out both;
+}

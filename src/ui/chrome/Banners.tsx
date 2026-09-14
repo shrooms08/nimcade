@@ -23,7 +23,7 @@ export function Banners({
   if (hidden || (!state.offline && !state.noProvider && !state.rejected))
     return null
   return (
-    <div className="nc-banners">
+    <div className="nc-banners nc-defer-in">
       {state.offline && (
         <div className="nc-banner nc-glass" role="status">
           <OfflineIcon />

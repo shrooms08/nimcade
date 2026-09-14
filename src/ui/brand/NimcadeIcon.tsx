@@ -1,20 +1,25 @@
-/** The Nimcade app icon from the UI kit: a gold rounded square with a black N. */
+import { CHEVRON_BOTTOM, CHEVRON_GREY, CHEVRON_TOP, ICON_RADIUS, ICON_SIZE } from './chevron'
+
+/** The Nimcade app icon: a black rounded square with the double chevron (wordmark option B's glyph). */
 export function NimcadeIcon({
   size,
   className,
   squareClassName,
-  letterClassName,
+  glyphClassName,
 }: {
   size?: number
   className?: string
-  /** Hooks for animating the square and the N separately, as the splash does. */
+  /** Hooks for animating the square and the chevrons separately, as the splash does. */
   squareClassName?: string
-  letterClassName?: string
+  glyphClassName?: string
 }) {
   return (
-    <svg className={className} width={size} height={size} viewBox="0 0 204 204" aria-hidden="true">
-      <rect className={squareClassName} width="204" height="204" rx="46" fill="#F6B221" />
-      <path className={letterClassName} d="M52 170V34h34l52 68v-68h34v136h-34l-52-68v68h-34z" fill="#000000" />
+    <svg className={className} width={size} height={size} viewBox={`0 0 ${ICON_SIZE} ${ICON_SIZE}`} aria-hidden="true">
+      <rect className={squareClassName} width={ICON_SIZE} height={ICON_SIZE} rx={ICON_RADIUS} fill="#000000" />
+      <g className={glyphClassName}>
+        <polygon points={CHEVRON_BOTTOM} fill={CHEVRON_GREY} />
+        <polygon points={CHEVRON_TOP} fill="#FFFFFF" />
+      </g>
     </svg>
   )
 }

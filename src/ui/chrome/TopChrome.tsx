@@ -3,11 +3,14 @@ import { Coin } from '../components/Coin'
 /** The "For You | Top" segmented pill and the wallet chip. In play the pill fades and the chip collapses to its coin. */
 export function TopChrome({
   playing,
+  showWallet,
   walletLabel,
   onTop,
   onWallet,
 }: {
   playing: boolean
+  /** False until the splash has gone; the chip then mounts with a short fade. */
+  showWallet: boolean
   walletLabel: string
   onTop: () => void
   onWallet: () => void
@@ -24,15 +27,17 @@ export function TopChrome({
           </button>
         </div>
       </div>
-      <button
-        type="button"
-        className={playing ? 'nc-wallet-chip nc-glass is-collapsed' : 'nc-wallet-chip nc-glass'}
-        onClick={onWallet}
-        aria-label={`Wallet: ${walletLabel}`}
-      >
-        <Coin size={20} />
-        <span className="nc-wallet-chip__label">{walletLabel}</span>
-      </button>
+      {showWallet && (
+        <button
+          type="button"
+          className={playing ? 'nc-wallet-chip nc-glass nc-defer-in is-collapsed' : 'nc-wallet-chip nc-glass nc-defer-in'}
+          onClick={onWallet}
+          aria-label={`Wallet: ${walletLabel}`}
+        >
+          <Coin size={20} />
+          <span className="nc-wallet-chip__label">{walletLabel}</span>
+        </button>
+      )}
     </>
   )
 }

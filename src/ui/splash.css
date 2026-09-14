@@ -1,16 +1,19 @@
 /*
- * Startup sequence, CSS only. Timeline from mount:
- *   0-250ms     white screen, dotted grid fades in
- *   200-650ms   icon scales .6 -> 1 at screen centre (soft overshoot); the N 100ms after the square
- *   650-1000ms  icon rises to 88px from the top, the wordmark fading in under it as it goes
- *   900-1500ms  five cover tiles slide in from the right, 60ms apart; the strip drifts left ~30px
- *   exit        500ms to black while the icon settles to .9 (added by Splash.tsx, at 1.5s or later)
+ * Startup sequence, CSS only, animating transform and opacity only. Timeline from mount:
+ *   0-400ms      dotted grid fades in
+ *   300-1000ms   icon scales .7 -> 1 (overshooting to 1.03) at screen centre; chevrons fade in from 500ms
+ *   1000-1600ms  icon and wordmark rise together to the settled spot, the wordmark fading in
+ *   1400-2300ms  five cover tiles slide in from the right, 90ms apart, rotating 4deg -> 0; centre tile to 1.06
+ *   2300-2700ms  the strip drifts left 24px
+ *   exit         400ms: a black veil fades in, the icon eases to .94, the layer fades off the feed
+ *                (added by Splash.tsx at 2.6s or later)
+ * Movement eases with --nc-splash-move, opacity with ease-out.
  */
 
 .nc-splash {
   --nc-splash-icon: 72px;
   --nc-splash-top: 88px;
-  --nc-splash-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --nc-splash-move: cubic-bezier(0.22, 0.61, 0.36, 1);
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -23,10 +26,11 @@
   inset: 0;
   background-image: radial-gradient(rgba(0, 0, 0, 0.18) 1px, transparent 1px);
   background-size: 22px 22px;
-  animation: nc-splash-in 250ms ease-out both;
+  will-change: opacity;
+  animation: nc-splash-in 400ms ease-out both;
 }
 
-/* Positioned at its final spot; the animation starts it at screen centre. */
+/* Laid out at the settled spot; the animation starts it at screen centre. */
 .nc-splash__rise {
   position: absolute;
   top: var(--nc-splash-top);
@@ -34,22 +38,24 @@
   width: var(--nc-splash-icon);
   height: var(--nc-splash-icon);
   margin-left: calc(var(--nc-splash-icon) / -2);
-  animation: nc-splash-rise 350ms var(--nc-splash-ease) 650ms both;
+  will-change: transform;
+  animation: nc-splash-rise 600ms var(--nc-splash-move) 1000ms both;
 }
 
 .nc-splash__icon {
   display: block;
   width: 100%;
   height: 100%;
-  animation: nc-splash-icon 450ms var(--nc-splash-ease) 200ms both;
+  will-change: transform;
+  animation: nc-splash-icon 700ms var(--nc-splash-move) 300ms both;
 }
 
 .nc-splash__square {
-  animation: nc-splash-in 200ms ease-out 200ms both;
+  animation: nc-splash-in 200ms ease-out 300ms both;
 }
 
-.nc-splash__n {
-  animation: nc-splash-in 200ms ease-out 300ms both;
+.nc-splash__glyph {
+  animation: nc-splash-in 300ms ease-out 500ms both;
 }
 
 /* Inside .nc-splash__rise: 20px under the icon, moving with it. */
@@ -59,7 +65,8 @@
   left: 50%;
   display: block;
   transform: translateX(-50%);
-  animation: nc-splash-in 350ms var(--nc-splash-ease) 650ms both;
+  will-change: opacity;
+  animation: nc-splash-in 500ms ease-out 1000ms both;
 }
 
 .nc-splash__tiles {
@@ -73,12 +80,16 @@
 .nc-splash__strip {
   display: flex;
   gap: 40px;
-  animation: nc-splash-drift 900ms linear 1100ms both;
+  will-change: transform;
+  animation: nc-splash-drift 400ms var(--nc-splash-move) 2300ms both;
 }
 
 .nc-splash__slot {
   flex-shrink: 0;
-  animation: nc-splash-slide 360ms var(--nc-splash-ease) calc(900ms + var(--i) * 60ms) both;
+  will-change: transform, opacity;
+  animation:
+    nc-splash-slide 540ms var(--nc-splash-move) calc(1400ms + var(--i) * 90ms) both,
+    nc-splash-in 360ms ease-out calc(1400ms + var(--i) * 90ms) both;
 }
 
 .nc-splash__frame {
@@ -89,6 +100,8 @@
 
 .nc-splash__frame.is-centre {
   transform: scale(1.06);
+  will-change: transform;
+  animation: nc-splash-centre 600ms var(--nc-splash-move) 1700ms both;
 }
 
 .nc-splash__marks {
@@ -105,20 +118,28 @@
   pointer-events: none;
 }
 
-/* Exit: the white turns black and the content goes, then the whole layer fades off the feed. */
+/* Black layer between the covers and the icon, faded in during the exit. */
+.nc-splash__veil {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .nc-splash.is-leaving {
   pointer-events: none;
-  animation: nc-splash-out 500ms ease-in forwards;
+  will-change: opacity;
+  animation: nc-splash-out 400ms ease-out forwards;
+}
+
+.nc-splash.is-leaving .nc-splash__veil {
+  will-change: opacity;
+  animation: nc-splash-blackout 240ms ease-out forwards;
 }
 
 .nc-splash.is-leaving .nc-splash__icon {
-  animation: nc-splash-icon-out 500ms var(--nc-splash-ease) forwards;
-}
-
-.nc-splash.is-leaving .nc-splash__grid,
-.nc-splash.is-leaving .nc-splash__wordmark,
-.nc-splash.is-leaving .nc-splash__tiles {
-  animation: nc-splash-content-out 300ms ease-in forwards;
+  animation: nc-splash-icon-out 400ms var(--nc-splash-move) forwards;
 }
 
 @keyframes nc-splash-in {
@@ -127,8 +148,8 @@
 }
 
 @keyframes nc-splash-icon {
-  0% { transform: scale(0.6); }
-  65% { transform: scale(1.04); }
+  0% { transform: scale(0.7); }
+  70% { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
 
@@ -138,29 +159,33 @@
 }
 
 @keyframes nc-splash-slide {
-  from { opacity: 0; transform: translateX(110vw); }
-  to { opacity: 1; transform: translateX(0); }
+  from { transform: translateX(110vw) rotate(4deg); }
+  to { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes nc-splash-centre {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
 }
 
 @keyframes nc-splash-drift {
   from { transform: translateX(0); }
-  to { transform: translateX(-30px); }
+  to { transform: translateX(-24px); }
+}
+
+@keyframes nc-splash-blackout {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes nc-splash-out {
-  0% { background-color: #ffffff; opacity: 1; }
-  55% { background-color: #000000; opacity: 1; }
-  100% { background-color: #000000; opacity: 0; }
-}
-
-@keyframes nc-splash-content-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  0%, 50% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @keyframes nc-splash-icon-out {
   from { transform: scale(1); }
-  to { transform: scale(0.9); }
+  to { transform: scale(0.94); }
 }
 
 @keyframes nc-splash-fade-out {

@@ -32,7 +32,9 @@ const TOAST_MS = 1800
 type Mode = 'browse' | 'play'
 
 export default function App() {
-  const wallet = useWallet()
+  // Nothing wallet-related starts or renders, and no banner, hint, sheet or toast mounts, until the splash has faded out.
+  const [splashDone, setSplashDone] = useState(false)
+  const wallet = useWallet(splashDone)
   const online = useOnline()
   const feedRef = useRef<FeedHandle | null>(null)
   const indexRef = useRef(0)
@@ -63,6 +65,7 @@ export default function App() {
   }, [game.id, statsVersion])
 
   const markReady = useCallback(() => setFirstCardReady(true), [])
+  const onSplashExited = useCallback(() => setSplashDone(true), [])
 
   const dismissSwipeHint = useCallback(() => {
     if (!localStats.swipeHintSeen())
@@ -192,15 +195,17 @@ export default function App() {
         )}
       />
 
-      <TopChrome playing={playing} walletLabel={walletLabel} onTop={() => openSheet('cup')} onWallet={() => openSheet('wallet')} />
-      <Banners
-        state={{ offline: !online, noProvider: wallet.status === 'unavailable' && !noProviderDismissed, rejected: wallet.status === 'denied' && wallet.error !== null }}
-        hidden={playing || activeSheet !== null}
-        onDismissNoProvider={() => setNoProviderDismissed(true)}
-        onRetryWallet={wallet.retry}
-      />
-      {swipeHint && !playing && activeSheet === null && gameOver === null && <SwipeHint />}
-      {playing && hint.value && <HintPill text={hint.value} />}
+      <TopChrome playing={playing} showWallet={splashDone} walletLabel={walletLabel} onTop={() => openSheet('cup')} onWallet={() => openSheet('wallet')} />
+      {splashDone && (
+        <Banners
+          state={{ offline: !online, noProvider: wallet.status === 'unavailable' && !noProviderDismissed, rejected: wallet.status === 'denied' && wallet.error !== null }}
+          hidden={playing || activeSheet !== null}
+          onDismissNoProvider={() => setNoProviderDismissed(true)}
+          onRetryWallet={wallet.retry}
+        />
+      )}
+      {splashDone && swipeHint && !playing && activeSheet === null && gameOver === null && <div className="nc-defer-in"><SwipeHint /></div>}
+      {splashDone && playing && hint.value && <HintPill text={hint.value} />}
       <InfoCard
         game={game}
         best={stats.best}
@@ -219,7 +224,7 @@ export default function App() {
         onExitPlay={exitPlay}
       />
 
-      {activeSheet === 'tip' && (
+      {splashDone && activeSheet === 'tip' && (
         <TipSheet
           key={game.id}
           game={game}
@@ -229,10 +234,10 @@ export default function App() {
           onClose={closeSheet}
         />
       )}
-      {activeSheet === 'cup' && (
+      {splashDone && activeSheet === 'cup' && (
         <CupSheet games={games} initialGameId={game.id} address={connected ? wallet.address : null} onClose={closeSheet} />
       )}
-      {activeSheet === 'wallet' && (
+      {splashDone && activeSheet === 'wallet' && (
         <WalletSheet
           status={wallet.status}
           connected={connected}
@@ -244,9 +249,9 @@ export default function App() {
           onClose={closeSheet}
         />
       )}
-      {tipSuccess.value && <TipSuccess {...tipSuccess.value} />}
-      {toast.value && <Toast text={toast.value} />}
-      <Splash ready={firstCardReady} />
+      {splashDone && tipSuccess.value && <TipSuccess {...tipSuccess.value} />}
+      {splashDone && toast.value && <Toast text={toast.value} />}
+      <Splash ready={firstCardReady} onExited={onSplashExited} />
     </main>
   )
 }

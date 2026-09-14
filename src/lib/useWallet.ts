@@ -35,7 +35,8 @@ export interface Wallet {
   retry: () => void
 }
 
-export function useWallet(): Wallet {
+/** With `enabled` false, nothing runs: no SDK init, no provider lookup, no approval dialog. */
+export function useWallet(enabled = true): Wallet {
   const providerRef = useRef<Promise<NimiqProvider> | null>(null)
   // Held so React's double-invoked effects in StrictMode reuse the in-flight
   // request instead of opening a second approval dialog.
@@ -46,6 +47,8 @@ export function useWallet(): Wallet {
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    if (!enabled)
+      return
     let cancelled = false
 
     async function run() {
@@ -101,7 +104,7 @@ export function useWallet(): Wallet {
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, enabled])
 
   const getProvider = useCallback(async () => {
     if (!providerRef.current)
