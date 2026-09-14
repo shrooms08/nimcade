@@ -109,7 +109,7 @@ export default function TapTempo({ active, onScore }: GameProps) {
     <div className="game game--tap-tempo">
       {phase === 'done' && score !== null
         ? (
-            <div className="game__panel">
+            <div className="game__panel" data-feed-scroll>
               <p className="game__score">{score}</p>
               <p className="game__verdict">{verdict(score)}</p>
               <button type="button" className="button button--primary" onClick={start}>

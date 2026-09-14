@@ -44,7 +44,8 @@ export default function GameCard({
 
   return (
     <section className="card" data-game-id={game.id}>
-      <div className="card__stage">
+      {/* Touches that start here never scroll the feed; see Feed.tsx. */}
+      <div className="card__stage" data-game-stage>
         <GameComponent active={active} onScore={handleScore} />
       </div>
 

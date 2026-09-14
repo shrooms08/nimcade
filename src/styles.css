@@ -316,6 +316,187 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Dot Rush ----------------------------------------------------------- */
+
+.dot-rush {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.dot-rush__surface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.dot-rush__hud {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.dot-rush__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.dot-rush__stat-label {
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dot-rush__stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot-rush__countdown {
+  min-width: 2ch;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease;
+}
+
+.dot-rush__countdown.is-urgent {
+  color: var(--red);
+}
+
+.dot-rush__countdown.is-flash {
+  animation: countdown-flash 0.32s ease-out;
+}
+
+@keyframes countdown-flash {
+  0% {
+    color: #ffffff;
+    text-shadow: 0 0 22px rgba(217, 68, 50, 0.95);
+    transform: scale(1.45);
+  }
+  100% {
+    text-shadow: none;
+    transform: scale(1);
+  }
+}
+
+.dot-rush__board {
+  position: relative;
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  place-items: center;
+  /* Size comes from the flex layout only, never from the canvas inside, so
+     the ResizeObserver cannot feed back into itself. */
+  contain: size;
+}
+
+.dot-rush__canvas {
+  display: block;
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+
+.dot-rush__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.dot-rush__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  grid-template-rows: repeat(2, 56px);
+  gap: 8px;
+  justify-content: center;
+}
+
+.dot-rush__key {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  touch-action: none;
+}
+
+.dot-rush__key:active {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(0.95);
+}
+
+.dot-rush__key svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dot-rush__key--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dot-rush__key--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dot-rush__key--down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.dot-rush__key--right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dot-rush__end {
+  position: absolute;
+  inset: 0;
+  align-content: center;
+  border-radius: var(--radius);
+  background: rgba(16, 18, 43, 0.82);
+  backdrop-filter: blur(3px);
+  touch-action: pan-y;
+  animation: toast-in 0.18s ease-out;
+}
+
+.dot-rush__end-title {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
 /* Toast -------------------------------------------------------------- */
 
 .toast {
