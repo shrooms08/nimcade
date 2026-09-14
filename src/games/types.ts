@@ -9,6 +9,11 @@ import type { ComponentType } from 'react'
  */
 export interface GameProps {
   active: boolean
+  /**
+   * True while the game's card fills the feed, in browse or play mode. Heavy
+   * games can use it to keep a live preview up; most ignore it.
+   */
+  visible?: boolean
   onScore: (score: number) => void
 }
 
@@ -20,5 +25,7 @@ export interface Game {
   maker: string
   /** Nimiq user-friendly address the tip is sent to, e.g. "NQ07 0000 ...". */
   makerAddress: string
+  /** First-play hint, shown once per device. */
+  hint: string
   component: ComponentType<GameProps>
 }

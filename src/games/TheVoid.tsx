@@ -3,7 +3,6 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { useGameLoop } from './shared/useGameLoop'
-import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
 import type { VoidRenderer } from './TheVoidRender'
 import {
@@ -31,7 +30,9 @@ function scrollParent(element: HTMLElement): Element | null {
   return null
 }
 
-export default function TheVoid({ active, onScore }: GameProps) {
+export default function TheVoid({ active, visible = false, onScore }: GameProps) {
+  // The 3D scene stays up while the card is on screen, so browse mode shows a live preview.
+  const sceneLive = active || visible
   const round = useRound(THE_VOID_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const [renderer, setRenderer] = useState<VoidRenderer | null>(null)
@@ -51,7 +52,6 @@ export default function TheVoid({ active, onScore }: GameProps) {
   const hudRef = useRef({ passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 })
   const steerPointerRef = useRef<number | null>(null)
   const boostPointerRef = useRef<number | null>(null)
-  const surfaceRef = usePlaySurface()
 
   useEffect(() => {
     rendererRef.current = renderer
@@ -86,9 +86,9 @@ export default function TheVoid({ active, onScore }: GameProps) {
     return () => observer.disconnect()
   }, [])
 
-  // A WebGL context only exists while the card is active.
+  // A WebGL context only exists while the card is on screen.
   useEffect(() => {
-    if (!active)
+    if (!sceneLive)
       return
     let cancelled = false
     let instance: VoidRenderer | null = null
@@ -108,7 +108,7 @@ export default function TheVoid({ active, onScore }: GameProps) {
       instance?.dispose()
       setRenderer(null)
     }
-  }, [active])
+  }, [sceneLive])
 
   // Dev-only handles for automated play-testing; stripped from production builds.
   useEffect(() => {
@@ -242,15 +242,11 @@ export default function TheVoid({ active, onScore }: GameProps) {
       steerPointerRef.current = null
   }
 
-  const playAgain = () => {
-    resetRound()
-    round.clear()
-  }
 
   const { x: bx, y: by, r } = BOOST_BUTTON
   return (
     <div ref={shellRef} className="game-shell">
-      <div ref={surfaceRef} className="game-surface" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      <div className="game-surface" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <GameHud
           label="Score" scoreRef={scoreRef}
           secondaryLabel="Stage" secondaryRef={stageNumberRef} secondaryInitial="1"
@@ -269,12 +265,12 @@ export default function TheVoid({ active, onScore }: GameProps) {
             </div>
             <p ref={bannerRef} className="void-banner" style={{ top: y(MOUTH_Y) }} hidden />
             {round.phase === 'ready' && <p className="game-hint void-hint" style={{ top: y(MOUTH_Y + MOUTH_HALF + 12) }}>Drag to steer · hold BOOST</p>}
-            {active && !renderer && <div className="void-loading"><span>Loading</span></div>}
+            {sceneLive && !renderer && <div className="void-loading"><span>Loading</span></div>}
           </div>
         </div>
       </div>
       {round.phase === 'over' && round.result && (
-        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} onPlayAgain={playAgain} />
+        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} />
       )}
     </div>
   )

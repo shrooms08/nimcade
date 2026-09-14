@@ -1,0 +1,178 @@
+/* Tip, Cup and wallet sheets. */
+
+.nc-sheet__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nc-sheet__sub--warn {
+  color: var(--nc-danger);
+}
+
+/* Tip -------------------------------------------------------------------------- */
+
+.nc-tip-amounts {
+  display: flex;
+  gap: 10px;
+}
+
+.nc-tip-amount {
+  flex: 1;
+  padding: 18px 0;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-tile);
+  background: var(--nc-white-06);
+  color: var(--nc-white);
+  font-size: var(--nc-fs-cta);
+  font-weight: 600;
+  text-align: center;
+  transition: background var(--nc-dur-pop) linear, transform var(--nc-dur-pop) var(--nc-ease);
+}
+
+.nc-tip-amount:active {
+  transform: scale(0.97);
+}
+
+.nc-tip-amount.is-on {
+  border-color: var(--nc-gold);
+  background: var(--nc-gold);
+  box-shadow: var(--nc-shadow-gold);
+  color: var(--nc-black);
+  font-weight: 700;
+}
+
+.nc-tip-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: var(--nc-fs-xs);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+}
+
+.nc-tip-error {
+  margin: 0;
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--nc-danger);
+}
+
+/* Wallet ------------------------------------------------------------------------- */
+
+.nc-wallet-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+  text-align: center;
+}
+
+.nc-wallet-hero .nc-coin {
+  font-size: 26px !important;
+}
+
+.nc-wallet-note {
+  margin: 0;
+  font-size: var(--nc-fs-xs);
+  line-height: 1.6;
+  color: var(--nc-grey-300);
+  text-align: center;
+}
+
+.nc-wallet-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nc-wallet-id__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nc-wallet-id__address {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.nc-wallet-id__sub {
+  font-size: var(--nc-fs-xs);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+}
+
+.nc-copy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 9px 13px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-pill);
+  background: var(--nc-white-08);
+  font-size: var(--nc-fs-xs);
+  font-weight: 600;
+}
+
+.nc-wallet-tiles {
+  display: flex;
+  gap: 10px;
+}
+
+.nc-wallet-tile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-tile);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nc-wallet-tile__value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--nc-fs-h2);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nc-wallet-tile__value--gold {
+  color: var(--nc-gold);
+}
+
+.nc-wallet-explainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--nc-gold-line-soft);
+  border-radius: var(--nc-radius-tile);
+  background: var(--nc-gold-wash);
+  color: var(--nc-gold);
+  font-size: var(--nc-fs-xs);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.nc-wallet-explainer svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.nc-wallet-disconnect {
+  align-self: center;
+  padding: 6px 12px;
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+}

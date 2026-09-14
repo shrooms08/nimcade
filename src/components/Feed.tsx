@@ -1,75 +1,66 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useImperativeHandle, useRef } from 'react'
+import type { ReactNode, Ref } from 'react'
 import type { Game } from '../games/types'
-import GameCard from './GameCard'
 
+export interface FeedHandle {
+  scrollTo: (index: number) => void
+}
+
+/**
+ * The vertical snap feed. A card counts as current once it fills most of the
+ * viewport. While a card is in play the feed is locked (overflow hidden,
+ * touch-action none), so the game owns every touch.
+ */
 export default function Feed({
   games,
-  onTip,
+  locked,
+  handleRef,
+  onCurrentChange,
+  renderCard,
 }: {
   games: Game[]
-  onTip: (game: Game) => Promise<void>
+  locked: boolean
+  handleRef: Ref<FeedHandle>
+  onCurrentChange: (index: number) => void
+  renderCard: (game: Game, index: number) => ReactNode
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [activeId, setActiveId] = useState<string | null>(games[0]?.id ?? null)
+  const onChangeRef = useRef(onCurrentChange)
+
+  useEffect(() => {
+    onChangeRef.current = onCurrentChange
+  })
+
+  useImperativeHandle(handleRef, () => ({
+    scrollTo(index: number) {
+      const container = containerRef.current
+      container?.scrollTo({ top: index * container.clientHeight, behavior: 'smooth' })
+    },
+  }), [])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container)
       return
-
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting)
-            continue
-          const id = (entry.target as HTMLElement).dataset.gameId
-          if (id)
-            setActiveId(id)
+          if (entry.isIntersecting)
+            onChangeRef.current(Number((entry.target as HTMLElement).dataset.index))
         }
       },
-      // Only the card filling most of the viewport counts as active, so a
-      // half-swiped card never starts its game.
       { root: container, threshold: 0.6 },
     )
-
-    const cards = container.querySelectorAll('[data-game-id]')
-    cards.forEach(card => observer.observe(card))
+    container.querySelectorAll('[data-index]').forEach(card => observer.observe(card))
     return () => observer.disconnect()
   }, [games])
 
-  // The feed may only be swiped from a card's padding, its title area, or an
-  // end panel. A touch that starts anywhere else inside a game stage never
-  // scrolls it. Touch events keep the element the touch started on as their
-  // target, so checking `target` on each move is enough. Non-passive, because
-  // a passive listener cannot cancel scrolling.
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container)
-      return
-
-    const onTouchMove = (event: TouchEvent) => {
-      const target = event.target
-      if (!(target instanceof Element))
-        return
-      if (!target.closest('[data-game-stage]') || target.closest('[data-feed-scroll]'))
-        return
-      if (event.cancelable)
-        event.preventDefault()
-    }
-
-    container.addEventListener('touchmove', onTouchMove, { passive: false })
-    return () => container.removeEventListener('touchmove', onTouchMove)
-  }, [])
-
   return (
-    <div className="feed" ref={containerRef}>
-      {games.map(game => (
-        <GameCard
-          key={game.id}
-          game={game}
-          active={game.id === activeId}
-          onTip={onTip}
-        />
+    <div ref={containerRef} className={locked ? 'nc-feed is-locked' : 'nc-feed'}>
+      {games.map((game, index) => (
+        <section key={game.id} className="nc-card" data-index={index} aria-label={game.title}>
+          {renderCard(game, index)}
+        </section>
       ))}
     </div>
   )

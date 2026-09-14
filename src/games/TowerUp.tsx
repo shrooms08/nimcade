@@ -6,7 +6,6 @@ import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { beginFrame, fillBoard, useCanvasBoard } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
-import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
 import { drawTowerUp, unitsTall } from './TowerUpRender'
 import { createWorld, pressLoad, releaseLoad, step, tumbleDone } from './TowerUpWorld'
@@ -21,7 +20,6 @@ export default function TowerUp({ active, onScore }: GameProps) {
   const floorsRef = useRef<HTMLSpanElement | null>(null)
   const bestRef = useRef<HTMLSpanElement | null>(null)
   const bestAtStartRef = useRef(0)
-  const surfaceRef = usePlaySurface()
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fillBoard)
 
   const draw = useCallback(() => {
@@ -99,14 +97,10 @@ export default function TowerUp({ active, onScore }: GameProps) {
 
   const release = () => releaseLoad(worldRef.current)
 
-  const playAgain = () => {
-    resetRound()
-    round.clear()
-  }
 
   return (
     <div className="game-shell">
-      <div ref={surfaceRef} className="game-surface" onPointerDown={press} onPointerUp={release} onPointerCancel={release}>
+      <div className="game-surface" onPointerDown={press} onPointerUp={release} onPointerCancel={release}>
         <GameHud label="Floors" scoreRef={floorsRef} secondaryLabel="Best" secondaryRef={bestRef} secondaryInitial="0" />
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
@@ -114,7 +108,7 @@ export default function TowerUp({ active, onScore }: GameProps) {
         </div>
       </div>
       {round.phase === 'over' && round.result && (
-        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} onPlayAgain={playAgain} />
+        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} />
       )}
     </div>
   )

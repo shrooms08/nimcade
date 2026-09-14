@@ -1,0 +1,142 @@
+/*
+ * Nimcade design tokens, extracted from design/prototype.html.
+ * Black chrome, white text, one accent (Nimiq gold). Glass surfaces over the
+ * games, sheets that slide up, a single easing curve.
+ */
+
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+
+:root {
+  /* Colour */
+  --nc-black: #000000;
+  --nc-white: #ffffff;
+  --nc-grey-100: #e7e7e9;
+  --nc-grey-200: #c9c9ce;
+  --nc-grey-300: #a3a3a8;
+  --nc-grey-400: #6e6e76;
+  --nc-grey-500: #4a4a52;
+  --nc-gold: #f6b221;
+  --nc-gold-tint: rgba(246, 178, 33, 0.12);
+  --nc-gold-wash: rgba(246, 178, 33, 0.08);
+  --nc-gold-line: rgba(246, 178, 33, 0.35);
+  --nc-gold-line-soft: rgba(246, 178, 33, 0.22);
+  --nc-danger: #ff5a5a;
+  --nc-white-06: rgba(255, 255, 255, 0.06);
+  --nc-white-08: rgba(255, 255, 255, 0.08);
+  --nc-white-25: rgba(255, 255, 255, 0.25);
+  --nc-white-45: rgba(255, 255, 255, 0.45);
+
+  /* Glass and scrims */
+  --nc-glass: rgba(0, 0, 0, 0.6);
+  --nc-glass-line: rgba(255, 255, 255, 0.1);
+  --nc-glass-blur: blur(18px) saturate(1.2);
+  --nc-sheet-bg: rgba(0, 0, 0, 0.84);
+  --nc-sheet-blur: blur(30px) saturate(1.2);
+  --nc-scrim: rgba(0, 0, 0, 0.6);
+  --nc-overlay: rgba(0, 0, 0, 0.55);
+  --nc-overlay-blur: blur(18px) saturate(1.1);
+
+  /* Shadows */
+  --nc-shadow-float: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --nc-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --nc-shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.6);
+  --nc-shadow-gold: 0 6px 18px rgba(246, 178, 33, 0.35);
+
+  /* Radii */
+  --nc-radius-pill: 999px;
+  --nc-radius-sheet: 24px;
+  --nc-radius-card: 20px;
+  --nc-radius-tile: 14px;
+  --nc-radius-tag: 6px;
+
+  /* Spacing */
+  --nc-space-1: 4px;
+  --nc-space-2: 8px;
+  --nc-space-3: 12px;
+  --nc-space-4: 16px;
+  --nc-space-5: 20px;
+  --nc-space-6: 24px;
+  --nc-space-7: 28px;
+  --nc-space-10: 40px;
+  --nc-edge: 16px;
+
+  /* Type */
+  --nc-font: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --nc-fs-caps: 11px;
+  --nc-fs-xs: 12px;
+  --nc-fs-sm: 13px;
+  --nc-fs-md: 14px;
+  --nc-fs-button: 15px;
+  --nc-fs-cta: 16px;
+  --nc-fs-lg: 20px;
+  --nc-fs-title: 22px;
+  --nc-fs-h2: 24px;
+  --nc-fs-h1: 34px;
+  --nc-fs-score: 40px;
+  --nc-fs-display: 84px;
+  --nc-tracking-caps: 0.12em;
+  --nc-tracking-tight: -0.02em;
+  --nc-tracking-display: -0.04em;
+
+  /* Motion */
+  --nc-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --nc-dur-pop: 120ms;
+  --nc-dur-chrome: 200ms;
+  --nc-dur-sheet: 250ms;
+  --nc-dur-draw: 300ms;
+
+  /* Layout: offsets measured from the real safe area (the prototype's 44px status bar was a device mock). */
+  --nc-safe-top: env(safe-area-inset-top, 0px);
+  --nc-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nc-chrome-top: calc(var(--nc-safe-top) + 12px);
+  --nc-nav-bottom: calc(var(--nc-safe-bottom) + 52px);
+  --nc-dots-bottom: calc(var(--nc-safe-bottom) + 48px);
+  --nc-info-bottom: calc(var(--nc-safe-bottom) + 118px);
+  /* The play area inside a card clears the top chips and the bottom round button. */
+  --nc-stage-top: calc(var(--nc-safe-top) + 56px);
+  --nc-stage-bottom: calc(var(--nc-safe-bottom) + 104px);
+}
+
+@keyframes nc-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes nc-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes nc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes nc-pop {
+  40% { transform: scale(1.18); }
+}
+
+@keyframes nc-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes nc-burst {
+  to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+@keyframes nc-float {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50% { transform: translateY(-8px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

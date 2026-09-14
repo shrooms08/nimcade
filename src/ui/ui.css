@@ -1,0 +1,246 @@
+/* Nimcade UI, ported from design/prototype.html. Uses the variables in tokens.css. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--nc-black);
+  color: var(--nc-white);
+  font-family: var(--nc-font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.nc-caps {
+  font-size: var(--nc-fs-caps);
+  font-weight: 600;
+  letter-spacing: var(--nc-tracking-caps);
+  text-transform: uppercase;
+  color: var(--nc-grey-300);
+}
+
+.nc-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Brand ------------------------------------------------------------------ */
+
+.nc-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.nc-wordmark--dark {
+  color: var(--nc-black);
+}
+
+.nc-wordmark--light {
+  color: var(--nc-white);
+}
+
+/* Splash ----------------------------------------------------------------- */
+
+.nc-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--nc-space-3);
+  background-color: var(--nc-white);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.13) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  transition: opacity var(--nc-dur-sheet) var(--nc-ease);
+}
+
+.nc-splash.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nc-splash__line {
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+  color: var(--nc-grey-400);
+}
+
+/* Glass, coin, buttons ----------------------------------------------------- */
+
+.nc-glass {
+  background: var(--nc-glass);
+  backdrop-filter: var(--nc-glass-blur);
+  -webkit-backdrop-filter: var(--nc-glass-blur);
+  border: 1px solid var(--nc-glass-line);
+  box-shadow: var(--nc-shadow-float);
+}
+
+.nc-coin {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--nc-gold);
+  color: var(--nc-black);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nc-coin--inverted {
+  background: var(--nc-black);
+  color: var(--nc-gold);
+}
+
+.nc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 48px;
+  padding: 16px;
+  border-radius: var(--nc-radius-pill);
+  font-size: var(--nc-fs-button);
+  font-weight: 600;
+  text-align: center;
+  transition: transform var(--nc-dur-pop) var(--nc-ease), opacity var(--nc-dur-pop) linear;
+}
+
+.nc-btn:active {
+  transform: scale(0.97);
+}
+
+.nc-btn:disabled {
+  cursor: default;
+}
+
+.nc-btn--white {
+  background: var(--nc-white);
+  color: var(--nc-black);
+}
+
+.nc-btn--gold {
+  background: var(--nc-gold);
+  color: var(--nc-black);
+  box-shadow: var(--nc-shadow-gold);
+}
+
+.nc-btn--cta {
+  padding: 18px;
+  font-size: var(--nc-fs-cta);
+  font-weight: 700;
+}
+
+.nc-btn--busy {
+  background: rgba(246, 178, 33, 0.35);
+  color: rgba(0, 0, 0, 0.65);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.nc-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(0, 0, 0, 0.35);
+  border-top-color: var(--nc-black);
+  border-radius: 50%;
+  animation: nc-spin 0.7s linear infinite;
+}
+
+.nc-drawn-check {
+  stroke-dasharray: 34;
+  stroke-dashoffset: 34;
+  animation: nc-draw var(--nc-dur-draw) ease-out forwards;
+}
+
+/* Sheets ------------------------------------------------------------------ */
+
+.nc-sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.nc-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--nc-scrim);
+  animation: nc-fade var(--nc-dur-sheet) ease-out;
+}
+
+.nc-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: calc(100% - var(--nc-safe-top) - 24px);
+  padding: 10px var(--nc-edge) calc(var(--nc-safe-bottom) + 40px);
+  overflow-y: auto;
+  border-top: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-sheet) var(--nc-radius-sheet) 0 0;
+  background: var(--nc-sheet-bg);
+  backdrop-filter: var(--nc-sheet-blur);
+  -webkit-backdrop-filter: var(--nc-sheet-blur);
+  box-shadow: var(--nc-shadow-sheet);
+  animation: nc-up var(--nc-dur-sheet) var(--nc-ease);
+  scrollbar-width: none;
+  transition: transform 120ms ease-out;
+}
+
+.nc-sheet--tall {
+  top: calc(var(--nc-safe-top) + 76px);
+  gap: 16px;
+  padding: 10px 0 0;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.86);
+}
+
+.nc-sheet__handle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 6px 0;
+  touch-action: none;
+}
+
+.nc-sheet__handle span {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--nc-white-25);
+}
+
+.nc-sheet__title {
+  margin: 0;
+  font-size: var(--nc-fs-h2);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: var(--nc-tracking-tight);
+}
+
+.nc-sheet__sub {
+  margin: 0;
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+}

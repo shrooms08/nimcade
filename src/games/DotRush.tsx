@@ -14,7 +14,6 @@ import type { Dir } from './shared/sprites'
 import { beginFrame, useCanvasBoard } from './shared/useCanvasBoard'
 import type { Fit } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
-import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
 
@@ -39,7 +38,6 @@ export default function DotRush({ active, onScore }: GameProps) {
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const waveRef = useRef<HTMLSpanElement | null>(null)
   const bannerRef = useRef<HTMLParagraphElement | null>(null)
-  const surfaceRef = usePlaySurface()
 
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fitMaze)
 
@@ -150,14 +148,10 @@ export default function DotRush({ active, onScore }: GameProps) {
     }
   }
 
-  const playAgain = () => {
-    resetRound()
-    round.clear()
-  }
 
   return (
     <div className="game-shell">
-      <div ref={surfaceRef} className="game-surface" onPointerDown={event => event.stopPropagation()}>
+      <div className="game-surface">
         <GameHud label="Score" scoreRef={scoreRef} secondaryLabel="Wave" secondaryRef={waveRef} secondaryInitial="1" />
 
         <div ref={boardRef} className="game-board">
@@ -188,7 +182,6 @@ export default function DotRush({ active, onScore }: GameProps) {
           reason={round.result.reason}
           score={round.result.score}
           best={round.result.best}
-          onPlayAgain={playAgain}
         />
       )}
     </div>

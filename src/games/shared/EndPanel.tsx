@@ -1,31 +1,15 @@
+import { useEffect } from 'react'
+import { useRoundReporter } from './roundReport'
+
 /**
- * End-of-round panel: why the round ended, the score, and the best. Marked
- * `data-feed-scroll`, so swiping on it moves the feed even though it sits
- * inside a game stage.
+ * Games render this when a round ends. It draws nothing itself: it reports the
+ * result to the feed card, which shows the game-over overlay and returns the
+ * card to browse mode (the game resets itself when it goes inactive).
  */
-export function EndPanel({
-  reason,
-  score,
-  best,
-  overlay = true,
-  onPlayAgain,
-}: {
-  /** One line, e.g. "Caught!". */
-  reason: string
-  score: number
-  best: number
-  /** Covers the play area; false renders it in normal flow. */
-  overlay?: boolean
-  onPlayAgain: () => void
-}) {
-  return (
-    <div className={overlay ? 'game__panel game-end' : 'game__panel'} data-feed-scroll>
-      <p className="game-end__title">{reason}</p>
-      <p className="game__score">{score}</p>
-      <p className="game__verdict">{score === best && score > 0 ? 'New best' : `Best ${best}`}</p>
-      <button type="button" className="button button--primary" onClick={onPlayAgain}>
-        Play again
-      </button>
-    </div>
-  )
+export function EndPanel({ reason, score, best }: { reason: string; score: number; best: number }) {
+  const report = useRoundReporter()
+  useEffect(() => {
+    report({ reason, score, best })
+  }, [report, reason, score, best])
+  return null
 }

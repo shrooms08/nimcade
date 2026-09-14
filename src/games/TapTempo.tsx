@@ -93,8 +93,6 @@ export default function TapTempo({ active, onScore }: GameProps) {
               reason={round.result.reason}
               score={round.result.score}
               best={round.result.best}
-              overlay={false}
-              onPlayAgain={start}
             />
           )
         : (

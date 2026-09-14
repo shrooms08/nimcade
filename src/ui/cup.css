@@ -1,0 +1,170 @@
+/* Cup sheet: game tabs, prize pool, countdown, standings. */
+
+.nc-cup-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 0 var(--nc-edge);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nc-cup-tabs::-webkit-scrollbar,
+.nc-cup-rows::-webkit-scrollbar {
+  display: none;
+}
+
+.nc-cup-tab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid var(--nc-glass-line);
+  border-radius: var(--nc-radius-pill);
+  background: var(--nc-white-06);
+  color: var(--nc-grey-300);
+  font-size: var(--nc-fs-sm);
+  font-weight: 500;
+}
+
+.nc-cup-tab.is-on {
+  border-color: var(--nc-white);
+  background: var(--nc-white);
+  color: var(--nc-black);
+  font-weight: 600;
+}
+
+.nc-cup-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 var(--nc-edge);
+}
+
+.nc-cup-head__block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nc-cup-head__block--end {
+  align-items: flex-end;
+}
+
+.nc-cup-pool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--nc-fs-h1);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--nc-tracking-tight);
+  color: var(--nc-gold);
+}
+
+.nc-cup-clock {
+  font-size: var(--nc-fs-lg);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.nc-cup-rows {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border-top: 1px solid var(--nc-white-08);
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.nc-cup-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px var(--nc-edge);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nc-cup-row--loading {
+  color: var(--nc-grey-300);
+  font-size: var(--nc-fs-sm);
+}
+
+.nc-cup-row__rank {
+  width: 26px;
+  font-size: var(--nc-fs-button);
+  font-weight: 600;
+  color: var(--nc-grey-300);
+}
+
+.nc-cup-row__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--nc-fs-md);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nc-cup-row.is-prize .nc-cup-row__rank {
+  font-weight: 700;
+  color: var(--nc-gold);
+}
+
+.nc-cup-row.is-prize .nc-cup-row__name {
+  font-weight: 600;
+  color: var(--nc-white);
+}
+
+.nc-cup-row__score {
+  font-size: var(--nc-fs-md);
+  font-weight: 500;
+}
+
+.nc-cup-row__prize {
+  width: 74px;
+  font-size: var(--nc-fs-sm);
+  font-weight: 600;
+  text-align: right;
+  color: var(--nc-gold);
+}
+
+.nc-cup-you {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--nc-edge) calc(var(--nc-safe-bottom) + 28px);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nc-cup-you__rank {
+  width: 26px;
+  font-size: var(--nc-fs-button);
+  font-weight: 700;
+}
+
+.nc-cup-you__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nc-cup-you__name {
+  font-size: var(--nc-fs-md);
+  font-weight: 700;
+}
+
+.nc-cup-you__sub {
+  font-size: var(--nc-fs-caps);
+  font-weight: 500;
+  color: var(--nc-grey-300);
+}
+
+.nc-cup-you__score {
+  font-size: var(--nc-fs-md);
+  font-weight: 600;
+}

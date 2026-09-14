@@ -12,9 +12,9 @@ const MAKER_ADDRESS
 
 /** Rendered top to bottom in the feed. */
 export const games: Game[] = [
-  { id: DOT_RUSH_ID, title: 'Dot Rush', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, component: DotRush },
-  { id: TOWER_UP_ID, title: 'Tower Up', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, component: TowerUp },
-  { id: THE_VOID_ID, title: 'The Void', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, component: TheVoid },
-  { id: FLIP_DODGE_ID, title: 'Flip Dodge', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, component: FlipDodge },
-  { id: TAP_TEMPO_ID, title: 'Tap Tempo', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, component: TapTempo },
+  { id: DOT_RUSH_ID, title: 'Dot Rush', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap the arrows to move', component: DotRush },
+  { id: TOWER_UP_ID, title: 'Tower Up', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Hold to lower, release to drop', component: TowerUp },
+  { id: THE_VOID_ID, title: 'The Void', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Drag to steer', component: TheVoid },
+  { id: FLIP_DODGE_ID, title: 'Flip Dodge', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap to flip lanes', component: FlipDodge },
+  { id: TAP_TEMPO_ID, title: 'Tap Tempo', maker: 'Nimcade', makerAddress: MAKER_ADDRESS, hint: 'Tap on the beat', component: TapTempo },
 ]

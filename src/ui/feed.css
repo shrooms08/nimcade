@@ -1,0 +1,85 @@
+/* The snap feed and its cards. */
+
+.nc-feed {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+
+.nc-feed::-webkit-scrollbar {
+  display: none;
+}
+
+/* In play the game owns every touch. */
+.nc-feed.is-locked {
+  overflow: hidden;
+  touch-action: none;
+}
+
+.nc-card {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: radial-gradient(120% 70% at 50% 12%, #15172b 0%, var(--nc-black) 62%);
+}
+
+.nc-card__stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nc-stage-top) var(--nc-edge) var(--nc-stage-bottom);
+}
+
+/* In-game controls and start prompts sit under the info card in browse; they fade in with play. */
+.nc-card__stage .dot-rush__pad,
+.nc-card__stage .game-hint {
+  transition: opacity var(--nc-dur-chrome) var(--nc-ease);
+}
+
+.nc-card__stage.is-browsing .dot-rush__pad,
+.nc-card__stage.is-browsing .game-hint {
+  opacity: 0;
+}
+
+/* Browse mode: sits over the game; lets vertical swipes scroll the feed, turns taps into play. */
+.nc-card__catcher {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.nc-card-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.nc-card-error__title {
+  margin: 0;
+  font-size: var(--nc-fs-lg);
+  font-weight: 700;
+}
+
+.nc-card-error__sub {
+  margin: 0 0 8px;
+  font-size: var(--nc-fs-sm);
+  color: var(--nc-grey-300);
+}
+
+.nc-card-error .nc-btn {
+  position: relative;
+  z-index: 11;
+  min-width: 140px;
+}

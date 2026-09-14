@@ -8,7 +8,6 @@ import { GameHud } from './shared/GameHud'
 import { spriteState } from './shared/sprites'
 import { beginFrame, fillBoard, useCanvasBoard } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
-import { usePlaySurface } from './shared/usePlaySurface'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
 
@@ -178,7 +177,6 @@ export default function FlipDodge({ active, onScore }: GameProps) {
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const speedRef = useRef<HTMLSpanElement | null>(null)
-  const surfaceRef = usePlaySurface()
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fillBoard)
 
   const draw = useCallback(() => {
@@ -274,14 +272,10 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     world.flip = 1 - world.flip
   }
 
-  const playAgain = () => {
-    resetRound()
-    round.clear()
-  }
 
   return (
     <div className="game-shell">
-      <div ref={surfaceRef} className="game-surface" onPointerDown={tap}>
+      <div className="game-surface" onPointerDown={tap}>
         <GameHud label="Coins" scoreRef={scoreRef} secondaryLabel="Speed" secondaryRef={speedRef} secondaryInitial="x1.0" />
         <div ref={boardRef} className="game-board">
           <canvas ref={canvasRef} className="game-canvas" />
@@ -289,7 +283,7 @@ export default function FlipDodge({ active, onScore }: GameProps) {
         </div>
       </div>
       {round.phase === 'over' && round.result && (
-        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} onPlayAgain={playAgain} />
+        <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} />
       )}
     </div>
   )
