@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { EndPanel } from './shared/EndPanel'
+import { useGameLoop } from './shared/useGameLoop'
+import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
+
+export const TAP_TEMPO_ID = 'tap-tempo'
 
 /** Milliseconds between beats (80 BPM). */
 const BEAT_MS = 750
 const TOTAL_TAPS = 10
-
-type Phase = 'ready' | 'playing' | 'done'
 
 function pointsForOffset(offsetMs: number): number {
   // A tap exactly on the beat scores 100; half a beat off scores 0.
@@ -24,118 +27,92 @@ function verdict(score: number): string {
 }
 
 export default function TapTempo({ active, onScore }: GameProps) {
-  const [phase, setPhase] = useState<Phase>('ready')
-  const [taps, setTaps] = useState<number[]>([])
+  const round = useRound(TAP_TEMPO_ID, active, onScore)
+  const [taps, setTaps] = useState(0)
   const [lastPoints, setLastPoints] = useState<number | null>(null)
-  const [score, setScore] = useState<number | null>(null)
 
-  const startRef = useRef<number>(0)
-  const tapsRef = useRef<number[]>([])
-  const circleRef = useRef<HTMLDivElement | null>(null)
-  const frameRef = useRef<number | null>(null)
+  const startRef = useRef(0)
+  const pointsRef = useRef<number[]>([])
+  const circleRef = useRef<HTMLSpanElement | null>(null)
 
-  const stopLoop = useCallback(() => {
-    if (frameRef.current !== null) {
-      cancelAnimationFrame(frameRef.current)
-      frameRef.current = null
-    }
-  }, [])
+  const { start: startPulse, stop: stopPulse } = useGameLoop(() => {
+    const elapsed = performance.now() - startRef.current
+    // Progress through the current beat, 0 -> 1.
+    const progress = (elapsed % BEAT_MS) / BEAT_MS
+    // Sharp attack on the beat, easing back out until the next one.
+    const scale = 1 + 0.35 * (1 - progress) ** 3
+    if (circleRef.current)
+      circleRef.current.style.transform = `scale(${scale.toFixed(3)})`
+    return true
+  })
 
-  const reset = useCallback(() => {
-    stopLoop()
-    tapsRef.current = []
-    startRef.current = 0
-    setTaps([])
-    setLastPoints(null)
-    setScore(null)
-    setPhase('ready')
+  const settleCircle = () => {
     if (circleRef.current)
       circleRef.current.style.transform = 'scale(1)'
-  }, [stopLoop])
+  }
 
-  // Pause and reset whenever the card scrolls out of view.
+  // Pause and reset whenever the card scrolls in or out of view.
   useEffect(() => {
-    if (!active)
-      reset()
-    return stopLoop
-  }, [active, reset, stopLoop])
+    stopPulse()
+    pointsRef.current = []
+    startRef.current = 0
+    if (circleRef.current)
+      circleRef.current.style.transform = 'scale(1)'
+    return stopPulse
+  }, [active, stopPulse])
 
-  const start = useCallback(() => {
-    tapsRef.current = []
-    setTaps([])
+  const start = () => {
+    pointsRef.current = []
+    setTaps(0)
     setLastPoints(null)
-    setScore(null)
-    setPhase('playing')
+    round.begin()
     startRef.current = performance.now()
+    startPulse()
+  }
 
-    const tick = () => {
-      const elapsed = performance.now() - startRef.current
-      // Progress through the current beat, 0 -> 1.
-      const progress = (elapsed % BEAT_MS) / BEAT_MS
-      // Sharp attack on the beat, easing back out until the next one.
-      const scale = 1 + 0.35 * (1 - progress) ** 3
-      if (circleRef.current)
-        circleRef.current.style.transform = `scale(${scale.toFixed(3)})`
-      frameRef.current = requestAnimationFrame(tick)
-    }
-    frameRef.current = requestAnimationFrame(tick)
-  }, [])
-
-  const tap = useCallback(() => {
-    if (phase !== 'playing')
+  const tap = () => {
+    if (round.phase !== 'playing')
       return
 
     const elapsed = performance.now() - startRef.current
     const offset = elapsed - Math.round(elapsed / BEAT_MS) * BEAT_MS
     const points = pointsForOffset(offset)
-
-    tapsRef.current = [...tapsRef.current, points]
-    setTaps(tapsRef.current)
+    pointsRef.current = [...pointsRef.current, points]
+    setTaps(pointsRef.current.length)
     setLastPoints(points)
 
-    if (tapsRef.current.length >= TOTAL_TAPS) {
-      stopLoop()
-      if (circleRef.current)
-        circleRef.current.style.transform = 'scale(1)'
-      const total = tapsRef.current.reduce((sum, value) => sum + value, 0)
-      const final = Math.round(total / tapsRef.current.length)
-      setScore(final)
-      setPhase('done')
-      onScore(final)
+    if (pointsRef.current.length >= TOTAL_TAPS) {
+      stopPulse()
+      settleCircle()
+      const total = pointsRef.current.reduce((sum, value) => sum + value, 0)
+      round.finish(Math.round(total / pointsRef.current.length), '')
     }
-  }, [onScore, phase, stopLoop])
+  }
+
+  const score = round.result?.score ?? null
+  const playing = round.phase === 'playing'
 
   return (
     <div className="game game--tap-tempo">
-      {phase === 'done' && score !== null
-        ? (
-            <div className="game__panel" data-feed-scroll>
-              <p className="game__score">{score}</p>
-              <p className="game__verdict">{verdict(score)}</p>
-              <button type="button" className="button button--primary" onClick={start}>
-                Play again
-              </button>
-            </div>
-          )
+      {round.phase === 'over' && score !== null
+        ? <EndPanel score={score} detail={verdict(score)} overlay={false} onPlayAgain={start} />
         : (
             <button
               type="button"
               className="tap-tempo__pad"
-              onPointerDown={phase === 'playing' ? tap : start}
-              aria-label={phase === 'playing' ? 'Tap on the beat' : 'Start Tap Tempo'}
+              onPointerDown={playing ? tap : start}
+              aria-label={playing ? 'Tap on the beat' : 'Start Tap Tempo'}
             >
               <span ref={circleRef} className="tap-tempo__circle">
-                <span className="tap-tempo__label">
-                  {phase === 'playing' ? `${TOTAL_TAPS - taps.length}` : 'Tap'}
-                </span>
+                <span className="tap-tempo__label">{playing ? `${TOTAL_TAPS - taps}` : 'Tap'}</span>
               </span>
             </button>
           )}
 
       <p className="game__hint">
-        {phase === 'ready' && 'Tap the circle, then hit every beat. 10 taps.'}
-        {phase === 'playing' && (lastPoints === null ? 'Hit the beat.' : `+${lastPoints}`)}
-        {phase === 'done' && `${TOTAL_TAPS} taps · avg ${score} / 100`}
+        {round.phase === 'ready' && 'Tap the circle, then hit every beat. 10 taps.'}
+        {playing && (lastPoints === null ? 'Hit the beat.' : `+${lastPoints}`)}
+        {round.phase === 'over' && `${TOTAL_TAPS} taps · avg ${score} / 100`}
       </p>
     </div>
   )
