@@ -4,7 +4,7 @@ import {
   MeshStandardMaterial, Path, PlaneGeometry, PointLight, Points, RepeatWrapping, Scene, ShaderMaterial, Shape, SRGBColorSpace,
   ShapeGeometry, SphereGeometry, TetrahedronGeometry,
 } from 'three'
-import { BALL_RADIUS, GRID, MOUTH_HALF } from './TheVoidWorld'
+import { BALL_RADIUS, GRID, MOUTH_HALF } from './VoidRunWorld'
 
 /** Scene units: the tunnel cross-section spans -HALF..HALF; tunnel-plane x,y map 1:1 (y flipped). */
 export const HALF = 1

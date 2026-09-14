@@ -6,17 +6,17 @@ Only the card on screen runs; swipe away and it pauses and resets. Best scores l
 
 ## The games
 
-- **Dot Rush**: steer through the maze with the arrow pad, clear every dot and dodge the chasers; grab a NIM coin to turn the tables.
-- **Tower Up**: the crane swings each floor over your tower; hold to lower, release to drop, and stack as high as you can.
-- **The Void**: a 3D tunnel run; drag the ball through the gaps in oncoming gates and hold boost for double points.
-- **Flip Dodge**: tap to flip lanes and dodge the barriers as the road keeps speeding up.
-- **Tap Frenzy**: how many taps can you land in 60 seconds?
+- **NimNom**: steer through the maze with the arrow pad, clear every dot and dodge the chasers; grab a NIM coin to turn the tables.
+- **Build Up**: the crane swings each floor over your tower; hold to lower, release to drop, and stack as high as you can.
+- **Void Run**: a 3D tunnel run; drag the ball through the gaps in oncoming gates and hold boost for double points.
+- **Dodge**: tap to flip lanes and dodge the barriers as the road keeps speeding up.
+- **Tap Speed**: how many taps can you land in 60 seconds?
 
 ## Tech stack
 
 - [Vite](https://vite.dev/), [React 19](https://react.dev/) and TypeScript, styled with plain CSS
 - [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk) for the wallet: `init`, `listAccounts`, `sendBasicTransaction`
-- [Three.js](https://threejs.org/) for The Void, loaded lazily in its own chunk
+- [Three.js](https://threejs.org/) for Void Run, loaded lazily in its own chunk
 - Space Grotesk via [Fontsource](https://fontsource.org/), self-hosted
 - [Vitest](https://vitest.dev/) for unit tests, [oxlint](https://oxc.rs/) for linting
 

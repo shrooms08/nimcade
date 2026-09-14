@@ -2,9 +2,9 @@ import { InstancedMesh, Object3D, PerspectiveCamera, Texture, WebGLRenderer } fr
 import type { Material, Mesh } from 'three'
 import {
   createVoidScene, HALF, MAX_SLABS, RING_BASE, RING_COUNT, RING_LIT, RING_SPACING, TILE, TRAIL_COUNT, WALL_CELL, Z_SPAN,
-} from './TheVoidScene'
-import { AREA_H, AREA_W, BOOST_RADIUS, GRID, isBoosting, MOUTH_HALF, MOUTH_Y } from './TheVoidWorld'
-import type { World } from './TheVoidWorld'
+} from './VoidRunScene'
+import { AREA_H, AREA_W, BOOST_RADIUS, GRID, isBoosting, MOUTH_HALF, MOUTH_Y } from './VoidRunWorld'
+import type { World } from './VoidRunWorld'
 
 const FOV = 60
 /** Camera distance at which the mouth (half-size HALF at z = 0) fills the same share of the width as the 2D layout. */

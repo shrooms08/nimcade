@@ -1,14 +1,14 @@
-import { TAP_FRENZY_ID } from '../../games/TapFrenzy'
+import { TAP_SPEED_ID } from '../../games/TapSpeed'
 import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** A tap point with ripples spreading out from it. */
-export function TapFrenzyCover(props: CoverProps) {
+export function TapSpeedCover(props: CoverProps) {
   return (
     <CoverTile
-      game={TAP_FRENZY_ID}
-      title="Tap Frenzy"
-      hook="Sixty seconds. Go."
+      game={TAP_SPEED_ID}
+      title="Tap Speed"
+      hook="How fast can you tap?"
       {...props}
       art={(
         <>

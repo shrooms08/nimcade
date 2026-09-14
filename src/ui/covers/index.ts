@@ -1,25 +1,25 @@
 import { createElement } from 'react'
 import type { ComponentType, ReactElement } from 'react'
-import { DOT_RUSH_ID } from '../../games/DotRush'
-import { FLIP_DODGE_ID } from '../../games/FlipDodge'
-import { TAP_FRENZY_ID } from '../../games/TapFrenzy'
-import { THE_VOID_ID } from '../../games/TheVoid'
-import { TOWER_UP_ID } from '../../games/TowerUp'
+import { NIMNOM_ID } from '../../games/NimNom'
+import { DODGE_ID } from '../../games/Dodge'
+import { TAP_SPEED_ID } from '../../games/TapSpeed'
+import { VOID_RUN_ID } from '../../games/VoidRun'
+import { BUILD_UP_ID } from '../../games/BuildUp'
 import type { CoverProps } from './CoverTile'
-import { DotRushCover } from './DotRushCover'
-import { FlipDodgeCover } from './FlipDodgeCover'
-import { TapFrenzyCover } from './TapFrenzyCover'
-import { TheVoidCover } from './TheVoidCover'
-import { TowerUpCover } from './TowerUpCover'
+import { NimNomCover } from './NimNomCover'
+import { DodgeCover } from './DodgeCover'
+import { TapSpeedCover } from './TapSpeedCover'
+import { VoidRunCover } from './VoidRunCover'
+import { BuildUpCover } from './BuildUpCover'
 
 export type { CoverProps } from './CoverTile'
 
 const COVERS: Record<string, ComponentType<CoverProps>> = {
-  [DOT_RUSH_ID]: DotRushCover,
-  [TOWER_UP_ID]: TowerUpCover,
-  [THE_VOID_ID]: TheVoidCover,
-  [FLIP_DODGE_ID]: FlipDodgeCover,
-  [TAP_FRENZY_ID]: TapFrenzyCover,
+  [NIMNOM_ID]: NimNomCover,
+  [BUILD_UP_ID]: BuildUpCover,
+  [VOID_RUN_ID]: VoidRunCover,
+  [DODGE_ID]: DodgeCover,
+  [TAP_SPEED_ID]: TapSpeedCover,
 }
 
 /** The cover tile for a game, or undefined for a game that has none yet. */

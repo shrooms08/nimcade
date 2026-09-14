@@ -39,6 +39,9 @@ function readFlag(key: string): boolean {
   }
 }
 
+/** Ids the games had before they were renamed; their per-game keys don't carry over. */
+const RETIRED_GAME_IDS = ['dot-rush', 'tower-up', 'the-void', 'flip-dodge', 'tap-frenzy']
+
 export const localStats = {
   plays: (gameId: string) => readNumber(KEYS.plays(gameId)),
   addPlay: (gameId: string) => write(KEYS.plays(gameId), String(readNumber(KEYS.plays(gameId)) + 1)),
@@ -49,6 +52,18 @@ export const localStats = {
   addTip(gameId: string, nim: number) {
     write(KEYS.tips(gameId), String(readNumber(KEYS.tips(gameId)) + nim))
     write(KEYS.tipsSent, String(readNumber(KEYS.tipsSent) + nim))
+  },
+  /** Removes best scores, plays and tips stored under the games' old ids (tips sent in total stay). */
+  forgetRetiredGames() {
+    try {
+      for (const id of RETIRED_GAME_IDS) {
+        for (const key of [`nimcade:best:${id}`, KEYS.plays(id), KEYS.tips(id)])
+          localStorage.removeItem(key)
+      }
+    }
+    catch {
+      // Storage unavailable: nothing to clean up.
+    }
   },
   /** Removes the per-game hint flags older builds stored; the cover now shows how to play. */
   forgetHintFlags() {

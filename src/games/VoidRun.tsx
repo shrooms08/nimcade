@@ -7,19 +7,19 @@ import { PreRoll } from './shared/PreRoll'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePreRoll } from './shared/usePreRoll'
 import { useRound } from './shared/useRound'
-import type { VoidRenderer } from './TheVoidRender'
+import type { VoidRenderer } from './VoidRunRender'
 import {
   AREA_H, AREA_W, BOOST_BAR, BOOST_BUTTON, crashDone, createWorld, GATES_PER_STAGE, inBoostButton, isBoosting,
   MAX_SHIELDS, MOUTH_HALF, MOUTH_Y, setBoost, setTarget, START_SHIELDS, step, unitsToPlane,
-} from './TheVoidWorld'
-import type { World } from './TheVoidWorld'
+} from './VoidRunWorld'
+import type { World } from './VoidRunWorld'
 import type { GameProps } from './types'
-import './TheVoid.css'
+import './VoidRun.css'
 
-export const THE_VOID_ID = 'the-void'
+export const VOID_RUN_ID = 'void-run'
 
 /** The Three.js renderer lives in its own lazily loaded chunk; repeat calls share one request. */
-const loadRenderer = () => import('./TheVoidRender')
+const loadRenderer = () => import('./VoidRunRender')
 
 /** A position or size in game units as a percentage of the play area. */
 const x = (units: number) => `${(units / AREA_W) * 100}%`
@@ -33,10 +33,10 @@ function scrollParent(element: HTMLElement): Element | null {
   return null
 }
 
-export default function TheVoid({ active, visible = false, onScore }: GameProps) {
+export default function VoidRun({ active, visible = false, onScore }: GameProps) {
   // The 3D scene stays up while the card is on screen, so browse mode shows a live preview.
   const sceneLive = active || visible
-  const round = useRound(THE_VOID_ID, active, onScore)
+  const round = useRound(VOID_RUN_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const [renderer, setRenderer] = useState<VoidRenderer | null>(null)
   const rendererRef = useRef<VoidRenderer | null>(null)
@@ -123,7 +123,7 @@ export default function TheVoid({ active, visible = false, onScore }: GameProps)
     if (!import.meta.env.DEV)
       return
     const host = window as typeof window & { __nimcade?: Record<string, () => unknown> }
-    host.__nimcade = { ...host.__nimcade, theVoid: () => worldRef.current, theVoidRenderer: () => rendererRef.current?.stats() ?? null }
+    host.__nimcade = { ...host.__nimcade, voidRun: () => worldRef.current, voidRunRenderer: () => rendererRef.current?.stats() ?? null }
   }, [])
 
   const updateHud = useCallback(() => {

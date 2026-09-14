@@ -1,6 +1,6 @@
-import type { Layout } from './DotRushLayouts'
-import { advance, canMove, createMover, DIRECTIONS, nearestTile, OPPOSITE, VECTORS } from './DotRushMovers'
-import type { Mover, Tile } from './DotRushMovers'
+import type { Layout } from './NimNomLayouts'
+import { advance, canMove, createMover, DIRECTIONS, nearestTile, OPPOSITE, VECTORS } from './NimNomMovers'
+import type { Mover, Tile } from './NimNomMovers'
 import type { Dir } from './shared/sprites'
 
 /** Tiles per second on wave 1. */

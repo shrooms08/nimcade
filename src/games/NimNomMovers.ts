@@ -1,5 +1,5 @@
-import { COLS, ROWS } from './DotRushLayouts'
-import type { Layout } from './DotRushLayouts'
+import { COLS, ROWS } from './NimNomLayouts'
+import type { Layout } from './NimNomLayouts'
 import type { Dir } from './shared/sprites'
 
 export type Tile = [col: number, row: number]

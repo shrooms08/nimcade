@@ -1,4 +1,4 @@
-import { DOT_RUSH_ID } from '../../games/DotRush'
+import { NIMNOM_ID } from '../../games/NimNom'
 import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
@@ -8,12 +8,12 @@ const DOTS = [
 ]
 
 /** Maze walls, a trail of dots, the player block and a red chaser star. */
-export function DotRushCover(props: CoverProps) {
+export function NimNomCover(props: CoverProps) {
   return (
     <CoverTile
-      game={DOT_RUSH_ID}
-      title="Dot Rush"
-      hook="Eat. Dodge. Survive."
+      game={NIMNOM_ID}
+      title="NimNom"
+      hook="Nom the dots. Dodge the stars."
       {...props}
       art={(
         <>

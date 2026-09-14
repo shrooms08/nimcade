@@ -81,7 +81,10 @@ export default function App() {
     dismissSwipeHint()
   }, [dismissSwipeHint])
 
-  useEffect(() => localStats.forgetHintFlags(), [])
+  useEffect(() => {
+    localStats.forgetHintFlags()
+    localStats.forgetRetiredGames()
+  }, [])
 
   const enterPlay = () => {
     setGameOver(null)

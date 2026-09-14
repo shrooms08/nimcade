@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { sprites } from './FlipDodgeSprites'
+import { sprites } from './DodgeSprites'
 import { agePops, applyShake, popLook, SHAKE_MS } from './shared/effects'
 import type { Pop } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
@@ -11,7 +11,7 @@ import { useGameLoop } from './shared/useGameLoop'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
 
-export const FLIP_DODGE_ID = 'flip-dodge'
+export const DODGE_ID = 'dodge'
 
 /** Game units: the road is always WORLD_W units wide, split into two lanes. */
 const WORLD_W = 200
@@ -24,25 +24,26 @@ const PLAYER_FROM_BOTTOM = 80
 const OBSTACLE_W = 76
 const OBSTACLE_H = 30
 const COIN_SIZE = 56
-/** Road speed at 1x, in units per second. Keeps the 3.5x flip window at 200ms+. */
-const BASE_SPEED = 102
+/** How close (in units) the player and an object must be to touch. */
+const HIT_X = 50
+const HIT_Y = 24
 /** Speed factor keyframes [seconds, factor], linear between them, holding after the last. */
-const RAMP: [number, number][] = [[0, 1], [15, 2], [45, 3], [90, 3.5]]
+const RAMP: [number, number][] = [[0, 1], [8, 2], [25, 3], [50, 3.5], [90, 4]]
 const MAX_FACTOR = RAMP[RAMP.length - 1][1]
-/**
- * Row spacing tightens linearly with speed. Flip window between back-to-back
- * barrier rows = (gap - 2 * HIT_Y) / speed: ~1000ms at 1x, ~441ms at 2x,
- * ~255ms at 3x, ~202ms at 3.5x.
- */
+/** Row spacing tightens linearly with speed, from ROW_GAP_SLOW at 1x to ROW_GAP_FAST at top speed. */
 const ROW_GAP_SLOW = 150
-const ROW_GAP_FAST = 120
+const ROW_GAP_FAST = 115
+/** Shortest flip window a round asks for, at top speed. */
+const MIN_FLIP_WINDOW_MS = 180
+/**
+ * Road speed at 1x (units/s). Flip window = (gap - 2 * HIT_Y) / speed. A 600ms window at 1x needs ~170,
+ * which leaves ~99ms at 4x, so the 4x floor sets it (~93): ~1096ms at 1x, ~485ms 2x, ~282ms 3x, 180ms 4x.
+ */
+const BASE_SPEED = (ROW_GAP_FAST - 2 * HIT_Y) / ((MAX_FACTOR * MIN_FLIP_WINDOW_MS) / 1000)
 const FIRST_ROW_Y = -60
 /** When a round starts, rows are already laid out from this far above the critter. */
 const FIRST_ROW_LEAD = 160
 const FLIP_SECONDS = 0.1
-/** How close (in units) the player and an object must be to touch. */
-const HIT_X = 50
-const HIT_Y = 24
 const DASH_GAP = 60
 
 /** Rows repeat barrier, barrier, rest: a rest row has coins in both lanes and no barrier. */
@@ -172,8 +173,8 @@ function step(world: World, dt: number, viewH: number) {
   world.things = world.things.filter(thing => thing.y < viewH + OBSTACLE_H * 2)
 }
 
-export default function FlipDodge({ active, onScore }: GameProps) {
-  const round = useRound(FLIP_DODGE_ID, active, onScore)
+export default function Dodge({ active, onScore }: GameProps) {
+  const round = useRound(DODGE_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const speedRef = useRef<HTMLSpanElement | null>(null)
@@ -219,6 +220,14 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     onResizeRef.current = draw
   }, [draw, onResizeRef])
 
+  // Dev-only handle for automated play-testing; stripped from production builds.
+  useEffect(() => {
+    if (!import.meta.env.DEV)
+      return
+    const host = window as typeof window & { __nimcade?: Record<string, () => unknown> }
+    host.__nimcade = { ...host.__nimcade, dodge: () => worldRef.current }
+  }, [])
+
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     const view = viewRef.current
@@ -260,7 +269,7 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     if (world.status === 'ready') {
       world.status = 'playing'
       if (import.meta.env.DEV) // stripped from production builds
-        console.info(`[Flip Dodge] flip window: 1x ${flipWindowMs(1)}ms, 2x ${flipWindowMs(2)}ms, 3x ${flipWindowMs(3)}ms, 3.5x ${flipWindowMs(3.5)}ms`)
+        console.info(`[Dodge] flip window: 1x ${flipWindowMs(1)}ms, 2x ${flipWindowMs(2)}ms, 3x ${flipWindowMs(3)}ms, 4x ${flipWindowMs(4)}ms`)
       round.begin()
       start()
       return
@@ -271,7 +280,6 @@ export default function FlipDodge({ active, onScore }: GameProps) {
     // Flipping mid-flip reverses from where the critter currently is.
     world.flip = 1 - world.flip
   }
-
 
   return (
     <div className="game-shell">

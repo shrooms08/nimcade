@@ -1,15 +1,15 @@
 import { useId } from 'react'
-import { THE_VOID_ID } from '../../games/TheVoid'
+import { VOID_RUN_ID } from '../../games/VoidRun'
 import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** A square tunnel receding to a point, a soft grey glow and the white ball. */
-export function TheVoidCover(props: CoverProps) {
+export function VoidRunCover(props: CoverProps) {
   const glow = useId()
   return (
     <CoverTile
-      game={THE_VOID_ID}
-      title="The Void"
+      game={VOID_RUN_ID}
+      title="Void Run"
       hook="Steer through the dark."
       {...props}
       art={(

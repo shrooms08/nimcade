@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { isActive } from './DotRushChasers'
-import { COLS, ROWS } from './DotRushLayouts'
-import { position } from './DotRushMovers'
-import { chaserLook, createWorld, step, WAVE_FLASH_MS } from './DotRushWorld'
-import type { World } from './DotRushWorld'
-import { palette, sprites } from './DotRushSprites'
+import { isActive } from './NimNomChasers'
+import { COLS, ROWS } from './NimNomLayouts'
+import { position } from './NimNomMovers'
+import { chaserLook, createWorld, step, WAVE_FLASH_MS } from './NimNomWorld'
+import type { World } from './NimNomWorld'
+import { palette, sprites } from './NimNomSprites'
 import { applyShake, drawTint, popLook } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
@@ -17,7 +17,7 @@ import { useGameLoop } from './shared/useGameLoop'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
 
-export const DOT_RUSH_ID = 'dot-rush'
+export const NIMNOM_ID = 'nimnom'
 
 const PAD: { dir: Dir; label: string; path: string }[] = [
   { dir: 'up', label: 'Up', path: 'M6 15l6-6 6 6' },
@@ -32,8 +32,8 @@ const fitMaze: Fit = (width, height) => {
   return { width: COLS * tile, height: ROWS * tile }
 }
 
-export default function DotRush({ active, onScore }: GameProps) {
-  const round = useRound(DOT_RUSH_ID, active, onScore)
+export default function NimNom({ active, onScore }: GameProps) {
+  const round = useRound(NIMNOM_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const waveRef = useRef<HTMLSpanElement | null>(null)
@@ -160,12 +160,12 @@ export default function DotRush({ active, onScore }: GameProps) {
           {round.phase === 'ready' && <p className="game-hint">Tap an arrow to start</p>}
         </div>
 
-        <div className="dot-rush__pad">
+        <div className="nimnom__pad">
           {PAD.map(({ dir, label, path }) => (
             <button
               key={dir}
               type="button"
-              className={`dot-rush__key dot-rush__key--${dir}`}
+              className={`nimnom__key nimnom__key--${dir}`}
               aria-label={label}
               onPointerDown={event => press(dir, event)}
             >

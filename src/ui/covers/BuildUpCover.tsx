@@ -1,4 +1,4 @@
-import { TOWER_UP_ID } from '../../games/TowerUp'
+import { BUILD_UP_ID } from '../../games/BuildUp'
 import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
@@ -11,11 +11,11 @@ const FLOORS = [
 ]
 
 /** A crane cable, the floor it carries and a slightly uneven stack of floors with windows. */
-export function TowerUpCover(props: CoverProps) {
+export function BuildUpCover(props: CoverProps) {
   return (
     <CoverTile
-      game={TOWER_UP_ID}
-      title="Tower Up"
+      game={BUILD_UP_ID}
+      title="Build Up"
       hook="Drop it. Stack it. Climb."
       {...props}
       art={(

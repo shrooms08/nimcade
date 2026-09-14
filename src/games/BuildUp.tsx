@@ -9,15 +9,15 @@ import { beginFrame, fillBoard, useCanvasBoard } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
 import { usePreRoll } from './shared/usePreRoll'
 import { useRound } from './shared/useRound'
-import { drawTowerUp, unitsTall } from './TowerUpRender'
-import { createWorld, pressLoad, releaseLoad, step, tumbleDone } from './TowerUpWorld'
-import type { World } from './TowerUpWorld'
+import { drawBuildUp, unitsTall } from './BuildUpRender'
+import { createWorld, pressLoad, releaseLoad, step, tumbleDone } from './BuildUpWorld'
+import type { World } from './BuildUpWorld'
 import type { GameProps } from './types'
 
-export const TOWER_UP_ID = 'tower-up'
+export const BUILD_UP_ID = 'build-up'
 
-export default function TowerUp({ active, onScore }: GameProps) {
-  const round = useRound(TOWER_UP_ID, active, onScore)
+export default function BuildUp({ active, onScore }: GameProps) {
+  const round = useRound(BUILD_UP_ID, active, onScore)
   const worldRef = useRef<World>(createWorld())
   const floorsRef = useRef<HTMLSpanElement | null>(null)
   const bestRef = useRef<HTMLSpanElement | null>(null)
@@ -33,7 +33,7 @@ export default function TowerUp({ active, onScore }: GameProps) {
     const ctx = beginFrame(canvasRef.current, viewRef.current)
     if (!ctx)
       return
-    drawTowerUp(ctx, viewRef.current, worldRef.current)
+    drawBuildUp(ctx, viewRef.current, worldRef.current)
     applyShake(canvasRef.current, worldRef.current.shake)
   }, [canvasRef, viewRef])
 
@@ -46,7 +46,7 @@ export default function TowerUp({ active, onScore }: GameProps) {
     if (!import.meta.env.DEV)
       return
     const host = window as typeof window & { __nimcade?: Record<string, () => unknown> }
-    host.__nimcade = { ...host.__nimcade, towerUp: () => worldRef.current }
+    host.__nimcade = { ...host.__nimcade, buildUp: () => worldRef.current }
   }, [])
 
   const updateHud = useCallback(() => {
@@ -74,7 +74,7 @@ export default function TowerUp({ active, onScore }: GameProps) {
     stop()
     cancelPreRoll()
     worldRef.current = createWorld()
-    bestAtStartRef.current = readBest(TOWER_UP_ID)
+    bestAtStartRef.current = readBest(BUILD_UP_ID)
     updateHud()
     draw()
   }, [cancelPreRoll, draw, stop, updateHud])

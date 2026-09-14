@@ -7,7 +7,7 @@ import { useGameLoop } from './shared/useGameLoop'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
 
-export const TAP_FRENZY_ID = 'tap-frenzy'
+export const TAP_SPEED_ID = 'tap-speed'
 
 export const ROUND_MS = 60_000
 /** The clock turns gold for the last stretch. */
@@ -32,8 +32,8 @@ function pop(element: HTMLElement | null) {
 }
 
 /** How many taps in 60 seconds. The first tap starts the clock and counts. */
-export default function TapFrenzy({ active, onScore }: GameProps) {
-  const round = useRound(TAP_FRENZY_ID, active, onScore)
+export default function TapSpeed({ active, onScore }: GameProps) {
+  const round = useRound(TAP_SPEED_ID, active, onScore)
   const clockRef = useRef<HTMLSpanElement | null>(null)
   const countRef = useRef<HTMLSpanElement | null>(null)
   const bestRef = useRef<HTMLSpanElement | null>(null)
@@ -73,7 +73,7 @@ export default function TapFrenzy({ active, onScore }: GameProps) {
     startRef.current = 0
     tapsRef.current = 0
     recentRef.current = []
-    bestAtStartRef.current = readBest(TAP_FRENZY_ID)
+    bestAtStartRef.current = readBest(TAP_SPEED_ID)
     setText(clockRef.current, String(ROUND_MS / 1000))
     clockRef.current?.classList.remove('is-low')
     setText(countRef.current, '0')
@@ -93,7 +93,7 @@ export default function TapFrenzy({ active, onScore }: GameProps) {
       return
     const rect = host.getBoundingClientRect()
     const ring = document.createElement('span')
-    ring.className = 'tap-frenzy__ripple'
+    ring.className = 'tap-speed__ripple'
     ring.style.left = `${event.clientX - rect.left}px`
     ring.style.top = `${event.clientY - rect.top}px`
     ring.addEventListener('animationend', () => ring.remove(), { once: true })
@@ -127,14 +127,14 @@ export default function TapFrenzy({ active, onScore }: GameProps) {
 
   return (
     <div className="game-shell">
-      <div className="game-surface tap-frenzy" onPointerDown={tap}>
+      <div className="game-surface tap-speed" onPointerDown={tap}>
         <GameHud label="Best" scoreRef={bestRef} secondaryLabel="Taps/s" secondaryRef={rateRef} secondaryInitial="0.0" />
         <div className="game-board">
-          <span ref={clockRef} className="tap-frenzy__clock">{ROUND_MS / 1000}</span>
-          <span ref={countRef} className="tap-frenzy__count">0</span>
+          <span ref={clockRef} className="tap-speed__clock">{ROUND_MS / 1000}</span>
+          <span ref={countRef} className="tap-speed__count">0</span>
           {round.phase === 'ready' && <p className="game-hint">Tap anywhere to start</p>}
         </div>
-        <div ref={ripplesRef} className="tap-frenzy__ripples" aria-hidden="true" />
+        <div ref={ripplesRef} className="tap-speed__ripples" aria-hidden="true" />
       </div>
       {round.phase === 'over' && round.result && (
         <EndPanel reason={round.result.reason} score={round.result.score} best={round.result.best} />

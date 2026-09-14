@@ -52,15 +52,15 @@ export function nextUtcMidnight(now = Date.now()): number {
 const PRIZES_NIM = [500, 300, 150]
 
 const MOCK_BOARDS: Record<string, [string, number][]> = {
-  'dot-rush': [['NQ21…9KC4', 4180], ['bauer.nim', 3905], ['NQ44…LM02', 3710], ['NQ58…3PX9', 3402], ['lena.nim', 3188], ['NQ07…QQ55', 2940], ['NQ93…7TF1', 2715], ['koto.nim', 2602], ['NQ12…8BD3', 2410], ['NQ66…X1V8', 2240]],
-  'tower-up': [['mira.nim', 1920], ['NQ84…2RT7', 1804], ['NQ19…KD40', 1755], ['solly.nim', 1610], ['NQ73…9AA1', 1502], ['NQ05…PL88', 1440], ['dax.nim', 1377], ['NQ61…VV20', 1290], ['NQ38…6HJ5', 1204], ['NQ90…QW14', 1150]],
-  'the-void': [['NQ11…ZZ01', 7420], ['nova.nim', 7180], ['NQ47…8KK2', 6905], ['NQ22…3DL9', 6540], ['rin.nim', 6210], ['NQ80…5MN4', 5980], ['NQ03…7YT8', 5740], ['aleph.nim', 5520], ['NQ55…1QQ6', 5301], ['NQ29…4WB0', 5120]],
-  'flip-dodge': [['NQ76…0PL3', 980], ['juno.nim', 940], ['NQ14…8SD1', 905], ['NQ62…2KK7', 870], ['pim.nim', 822], ['NQ33…9LL4', 790], ['NQ08…5TT2', 744], ['vesna.nim', 710], ['NQ91…3CC8', 688], ['NQ50…6RR1', 651]],
-  'tap-frenzy': [['thumbs.nim', 612], ['NQ27…4BB9', 598], ['NQ69…B17D', 587], ['NQ13…7FF2', 574], ['oke.nim', 561], ['NQ44…1NN5', 549], ['NQ86…9GG3', 540], ['sora.nim', 533], ['NQ02…8HH7', 521], ['NQ71…5JJ0', 515]],
+  'nimnom': [['NQ21…9KC4', 4180], ['bauer.nim', 3905], ['NQ44…LM02', 3710], ['NQ58…3PX9', 3402], ['lena.nim', 3188], ['NQ07…QQ55', 2940], ['NQ93…7TF1', 2715], ['koto.nim', 2602], ['NQ12…8BD3', 2410], ['NQ66…X1V8', 2240]],
+  'build-up': [['mira.nim', 1920], ['NQ84…2RT7', 1804], ['NQ19…KD40', 1755], ['solly.nim', 1610], ['NQ73…9AA1', 1502], ['NQ05…PL88', 1440], ['dax.nim', 1377], ['NQ61…VV20', 1290], ['NQ38…6HJ5', 1204], ['NQ90…QW14', 1150]],
+  'void-run': [['NQ11…ZZ01', 7420], ['nova.nim', 7180], ['NQ47…8KK2', 6905], ['NQ22…3DL9', 6540], ['rin.nim', 6210], ['NQ80…5MN4', 5980], ['NQ03…7YT8', 5740], ['aleph.nim', 5520], ['NQ55…1QQ6', 5301], ['NQ29…4WB0', 5120]],
+  'dodge': [['NQ76…0PL3', 980], ['juno.nim', 940], ['NQ14…8SD1', 905], ['NQ62…2KK7', 870], ['pim.nim', 822], ['NQ33…9LL4', 790], ['NQ08…5TT2', 744], ['vesna.nim', 710], ['NQ91…3CC8', 688], ['NQ50…6RR1', 651]],
+  'tap-speed': [['thumbs.nim', 612], ['NQ27…4BB9', 598], ['NQ69…B17D', 587], ['NQ13…7FF2', 574], ['oke.nim', 561], ['NQ44…1NN5', 549], ['NQ86…9GG3', 540], ['sora.nim', 533], ['NQ02…8HH7', 521], ['NQ71…5JJ0', 515]],
 }
 
 const MOCK_POOLS_NIM: Record<string, number> = {
-  'dot-rush': 1250, 'tower-up': 980, 'the-void': 2400, 'flip-dodge': 640, 'tap-frenzy': 1780,
+  'nimnom': 1250, 'build-up': 980, 'void-run': 2400, 'dodge': 640, 'tap-speed': 1780,
 }
 
 const MOCK_WINNINGS_NIM = 300

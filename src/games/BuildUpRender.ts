@@ -1,9 +1,9 @@
 import { POP_MS } from './shared/effects'
 import { spriteState } from './shared/sprites'
 import type { BoardView } from './shared/useCanvasBoard'
-import { sprites } from './TowerUpSprites'
-import { CONFETTI_MS, FLOOR_H, GLOW_MS, LABEL_MS, STREET_H, TUMBLE_MS, windowsFor, WORLD_W } from './TowerUpWorld'
-import type { Slab, World } from './TowerUpWorld'
+import { sprites } from './BuildUpSprites'
+import { CONFETTI_MS, FLOOR_H, GLOW_MS, LABEL_MS, STREET_H, TUMBLE_MS, windowsFor, WORLD_W } from './BuildUpWorld'
+import type { Slab, World } from './BuildUpWorld'
 
 /** Screen-space crane, in game units from the top of the canvas. */
 const CRANE_Y = 8
@@ -36,7 +36,7 @@ export const unitsTall = (view: BoardView) => (view.width ? view.height / (view.
 
 const wrap = (value: number, span: number) => ((value % span) + span) % span
 
-export function drawTowerUp(ctx: CanvasRenderingContext2D, view: BoardView, world: World) {
+export function drawBuildUp(ctx: CanvasRenderingContext2D, view: BoardView, world: World) {
   const k = view.width / WORLD_W
   const viewH = view.height / k
   const base = spriteState(world.clock)

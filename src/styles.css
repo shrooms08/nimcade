@@ -1,12 +1,12 @@
 /* Game internals (the feed chrome lives in src/ui/). Colours come from src/ui/tokens.css. */
 
-/* Tap Frenzy ---------------------------------------------------------- */
+/* Tap Speed ---------------------------------------------------------- */
 
-.tap-frenzy {
+.tap-speed {
   position: relative;
 }
 
-.tap-frenzy__clock {
+.tap-speed__clock {
   position: absolute;
   top: 4%;
   left: 0;
@@ -20,11 +20,11 @@
   transition: color var(--nc-dur-chrome) var(--nc-ease);
 }
 
-.tap-frenzy__clock.is-low {
+.tap-speed__clock.is-low {
   color: var(--nc-gold);
 }
 
-.tap-frenzy__count {
+.tap-speed__count {
   display: inline-block;
   color: var(--nc-white);
   font-size: clamp(96px, 36vw, 168px);
@@ -33,28 +33,28 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tap-frenzy__count.is-pop {
+.tap-speed__count.is-pop {
   animation: nc-pop var(--nc-dur-pop) ease-out;
 }
 
-.tap-frenzy__ripples {
+.tap-speed__ripples {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
 }
 
-.tap-frenzy__ripple {
+.tap-speed__ripple {
   position: absolute;
   width: 76px;
   height: 76px;
   margin: -38px 0 0 -38px;
   border: 2px solid var(--nc-gold);
   border-radius: 50%;
-  animation: tap-frenzy-ripple 420ms ease-out forwards;
+  animation: tap-speed-ripple 420ms ease-out forwards;
 }
 
-@keyframes tap-frenzy-ripple {
+@keyframes tap-speed-ripple {
   from { opacity: 0.9; transform: scale(0.25); }
   to { opacity: 0; transform: scale(1.6); }
 }
@@ -222,9 +222,9 @@
   }
 }
 
-/* Dot Rush ----------------------------------------------------------- */
+/* NimNom ----------------------------------------------------------- */
 
-.dot-rush__pad {
+.nimnom__pad {
   display: grid;
   grid-template-columns: repeat(3, 64px);
   grid-template-rows: repeat(2, 56px);
@@ -232,7 +232,7 @@
   justify-content: center;
 }
 
-.dot-rush__key {
+.nimnom__key {
   display: grid;
   place-items: center;
   width: 64px;
@@ -242,12 +242,12 @@
   touch-action: none;
 }
 
-.dot-rush__key:active {
+.nimnom__key:active {
   background: rgba(255, 255, 255, 0.22);
   transform: scale(0.95);
 }
 
-.dot-rush__key svg {
+.nimnom__key svg {
   width: 28px;
   height: 28px;
   fill: none;
@@ -257,22 +257,22 @@
   stroke-linejoin: round;
 }
 
-.dot-rush__key--up {
+.nimnom__key--up {
   grid-column: 2;
   grid-row: 1;
 }
 
-.dot-rush__key--left {
+.nimnom__key--left {
   grid-column: 1;
   grid-row: 2;
 }
 
-.dot-rush__key--down {
+.nimnom__key--down {
   grid-column: 2;
   grid-row: 2;
 }
 
-.dot-rush__key--right {
+.nimnom__key--right {
   grid-column: 3;
   grid-row: 2;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createWorld, GATE_POINTS, GRID, MAX_MULT10, START_SHIELDS, step } from './TheVoidWorld'
-import type { World } from './TheVoidWorld'
+import { createWorld, GATE_POINTS, GRID, MAX_MULT10, START_SHIELDS, step } from './VoidRunWorld'
+import type { World } from './VoidRunWorld'
 
 /** A gate right at the camera: resolves on the next step. */
 const gateAtCamera = (solid: boolean) => ({ depth: 0.0001, solid: new Array<boolean>(GRID * GRID).fill(solid) })
@@ -17,7 +17,7 @@ function playing(): World {
   return world
 }
 
-describe('The Void multiplier', () => {
+describe('Void Run multiplier', () => {
   it('grows by 0.1 per clean gate and stops at x5.0', () => {
     const world = playing()
     let highest = world.mult10

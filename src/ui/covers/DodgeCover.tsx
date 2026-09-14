@@ -1,13 +1,13 @@
-import { FLIP_DODGE_ID } from '../../games/FlipDodge'
+import { DODGE_ID } from '../../games/Dodge'
 import { CoverTile } from './CoverTile'
 import type { CoverProps } from './CoverTile'
 
 /** Two lanes split by a dashed line, barriers in each, the runner about to flip. */
-export function FlipDodgeCover(props: CoverProps) {
+export function DodgeCover(props: CoverProps) {
   return (
     <CoverTile
-      game={FLIP_DODGE_ID}
-      title="Flip Dodge"
+      game={DODGE_ID}
+      title="Dodge"
       hook="Two lanes. No mercy."
       {...props}
       art={(

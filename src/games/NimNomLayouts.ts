@@ -1,5 +1,5 @@
 /**
- * Dot Rush mazes. Legend: '#' wall, '.' dot, ' ' empty, 'P' player start,
+ * NimNom mazes. Legend: '#' wall, '.' dot, ' ' empty, 'P' player start,
  * 'C' chaser start (read in order: the first C is chaser 1), 'N' NIM coin.
  * Waves cycle through LAYOUTS in order.
  */
@@ -80,7 +80,7 @@ const RINGS = [
 
 function parse(name: string, rows: string[]): Layout {
   if (rows.length !== ROWS || rows.some(row => row.length !== COLS))
-    throw new Error(`Dot Rush layout "${name}" must be ${COLS}x${ROWS}`)
+    throw new Error(`NimNom layout "${name}" must be ${COLS}x${ROWS}`)
 
   const cells = rows.flatMap(row => [...row])
   const tilesOf = (marker: string): Tile[] =>
@@ -90,7 +90,7 @@ function parse(name: string, rows: string[]): Layout {
   const chasers = tilesOf('C')
   const coins = tilesOf('N')
   if (players.length !== 1 || chasers.length < CHASER_SLOTS || coins.length !== COINS_PER_LAYOUT)
-    throw new Error(`Dot Rush layout "${name}" needs 1 P, ${CHASER_SLOTS} C and ${COINS_PER_LAYOUT} N tiles`)
+    throw new Error(`NimNom layout "${name}" needs 1 P, ${CHASER_SLOTS} C and ${COINS_PER_LAYOUT} N tiles`)
 
   const dots = cells.map(ch => ch === '.')
   return {
