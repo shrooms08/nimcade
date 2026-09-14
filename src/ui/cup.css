@@ -168,3 +168,18 @@
   font-size: var(--nc-fs-md);
   font-weight: 600;
 }
+
+/* Today / Yesterday. */
+.nc-cup-days {
+  align-self: flex-start;
+  margin: 0 var(--nc-edge);
+  border: 1px solid var(--nc-glass-line);
+  background: var(--nc-white-06);
+}
+
+.nc-cup-row__status {
+  display: block;
+  color: var(--nc-grey-300);
+  font-size: var(--nc-fs-caps);
+  font-weight: 500;
+}

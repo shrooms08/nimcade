@@ -6,7 +6,7 @@ import { Coin } from '../components/Coin'
 import { CopyIcon, NoticeIcon } from '../components/icons'
 import { Sheet } from '../components/Sheet'
 import { DisplayNameRow } from './DisplayNameRow'
-import { shortAddress } from '../format'
+import { formatNim, shortAddress } from '../format'
 
 /** Display name, then connect or see the connected wallet: address, tips sent, Cup winnings. */
 export function WalletSheet({
@@ -33,10 +33,14 @@ export function WalletSheet({
 
   useEffect(() => {
     let cancelled = false
-    cupSource.getWinnings(connected ? address : null).then((nim) => {
-      if (!cancelled)
-        setWinnings(nim)
-    })
+    cupSource.getWinnings(connected ? address : null)
+      .then((nim) => {
+        if (!cancelled)
+          setWinnings(nim)
+      })
+      .catch(() => {
+        // Leave the tile at "—" when payouts can't be read.
+      })
     return () => {
       cancelled = true
     }
@@ -105,8 +109,7 @@ export function WalletSheet({
         </div>
         <div className="nc-wallet-tile">
           <span className="nc-caps">Cup winnings</span>
-          {/* TODO(backend): mock winnings from cupMock */}
-          <span className="nc-wallet-tile__value nc-wallet-tile__value--gold nc-num"><Coin size={16} />{winnings ?? '—'}</span>
+          <span className="nc-wallet-tile__value nc-wallet-tile__value--gold nc-num"><Coin size={16} />{winnings === null ? '—' : formatNim(winnings)}</span>
         </div>
       </div>
       <div className="nc-wallet-explainer">

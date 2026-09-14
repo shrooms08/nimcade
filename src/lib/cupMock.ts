@@ -1,3 +1,5 @@
+import { previousUtcDay } from '../../supabase/functions/_shared/cupPayout.ts'
+
 /**
  * Daily Cup interfaces, plus the MOCK data source from the design prototype. The live source is
  * cupApi.ts; cup.ts picks one (the mock with VITE_USE_MOCK=true or without Supabase config).
@@ -29,6 +31,23 @@ export interface CupSnapshot {
   you: CupStanding
 }
 
+/** 'sending' while pay-cup runs, 'sent' with a transaction, 'due' when it must be paid by hand. */
+export type PayoutStatus = 'sending' | 'sent' | 'due'
+
+export interface CupWinner extends CupEntry {
+  /** Null before the payout has run. */
+  status: PayoutStatus | null
+}
+
+/** A finished Cup: its pool and top 3, with payout status once pay-cup has run. */
+export interface CupResult {
+  gameId: string
+  day: string
+  prizePoolNim: number
+  paid: boolean
+  winners: CupWinner[]
+}
+
 export interface CupPlayer {
   bestScore: number
   address: string | null
@@ -38,6 +57,8 @@ export interface CupPlayer {
 
 export interface CupDataSource {
   getSnapshot: (gameId: string, player: CupPlayer) => Promise<CupSnapshot>
+  /** Yesterday's (UTC) winners for a game. */
+  getYesterday: (gameId: string) => Promise<CupResult>
   /** Total NIM this wallet has won in past Cups. */
   getWinnings: (address: string | null) => Promise<number>
 }
@@ -82,6 +103,12 @@ export const mockCupSource: CupDataSource = {
         toPrizeZone: ranked && lastPrize && player.bestScore <= lastPrize.score ? lastPrize.score - player.bestScore + 1 : null,
       },
     }
+  },
+  async getYesterday(gameId) {
+    const board = MOCK_BOARDS[gameId] ?? []
+    // The mock replays today's names with slightly lower scores as yesterday's winners.
+    const winners = board.slice(0, PRIZES_NIM.length).map(([name, score], i) => ({ rank: i + 1, name, score: Math.round(score * 0.9), prizeNim: PRIZES_NIM[i], status: 'sent' as const }))
+    return { gameId, day: previousUtcDay(), prizePoolNim: MOCK_POOLS_NIM[gameId] ?? 0, paid: true, winners }
   },
   async getWinnings(address) {
     return address ? MOCK_WINNINGS_NIM : 0

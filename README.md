@@ -2,7 +2,7 @@
 
 Nimcade is a swipe feed of endless arcade micro games that runs inside [Nimiq Pay](https://nimiq.com/pay/) as a mini app. Swipe up for the next game, tap to play, and chase your best score. Every game can be tipped: one tap sends NIM straight from your Nimiq Pay wallet to the game's maker. A Daily Cup ranks the day's best runs per game and pays out from a prize pool.
 
-Only the card on screen runs; swipe away and it pauses and resets. Best scores live on the device, and there is no backend yet: the Daily Cup currently runs on mock data behind a swappable interface ([src/lib/cupMock.ts](src/lib/cupMock.ts)).
+Only the card on screen runs; swipe away and it pauses and resets. Best scores live on the device. The Daily Cup, tip counts and payouts run on Supabase ([supabase/README.md](supabase/README.md)); without Supabase settings, or with `VITE_USE_MOCK=true`, the Cup falls back to mock data ([src/lib/cupMock.ts](src/lib/cupMock.ts)).
 
 ## The games
 
@@ -16,6 +16,7 @@ Only the card on screen runs; swipe away and it pauses and resets. Best scores l
 
 - [Vite](https://vite.dev/), [React 19](https://react.dev/) and TypeScript, styled with plain CSS
 - [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk) for the wallet: `init`, `listAccounts`, `sendBasicTransaction`
+- [Supabase](https://supabase.com/) (Postgres with RLS, Edge Functions, pg_cron) for signed Cup scores, verified tips and Cup payouts; [`@nimiq/core`](https://www.npmjs.com/package/@nimiq/core) signs the payouts
 - [Three.js](https://threejs.org/) for Void Run, loaded lazily in its own chunk
 - Space Grotesk via [Fontsource](https://fontsource.org/), self-hosted
 - [Vitest](https://vitest.dev/) for unit tests, [oxlint](https://oxc.rs/) for linting

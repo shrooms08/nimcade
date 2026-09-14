@@ -6,9 +6,11 @@ import { games } from './games/registry'
 import type { Game } from './games/types'
 import { useCupEntry } from './lib/cupEntry'
 import { localStats } from './lib/localStats'
-import { sendTip } from './lib/nimiq'
+import { nimToLuna, sendTip } from './lib/nimiq'
 import { readBest } from './lib/scores'
+import { backendOn } from './lib/supabase'
 import type { TipAmount } from './lib/tip'
+import { recordTip } from './lib/tipRecord'
 import { usePlayerName } from './lib/usePlayerName'
 import { useTipCounts } from './lib/useTipCounts'
 import { useWallet } from './lib/useWallet'
@@ -154,6 +156,16 @@ export default function App() {
     catch {
       // Haptics are optional.
     }
+    if (backendOn && connected && wallet.address) {
+      const report = { gameId: target.id, txHash: hash, fromWallet: wallet.address, toWallet: target.makerAddress, amountLuna: nimToLuna(amount) }
+      void recordTip(report).then((outcome) => {
+        // A recorded tip changes the card's tip count and the Cup pool.
+        if (outcome === 'recorded')
+          setStatsVersion(v => v + 1)
+        else if (import.meta.env.DEV)
+          console.info(`record-tip: ${outcome}`)
+      })
+    }
   }
 
   const share = async () => {
@@ -240,7 +252,7 @@ export default function App() {
         />
       )}
       {splashDone && activeSheet === 'cup' && (
-        <CupSheet games={games} initialGameId={game.id} address={connected ? wallet.address : null} onClose={closeSheet} />
+        <CupSheet games={games} initialGameId={game.id} address={connected ? wallet.address : null} refreshKey={statsVersion} onClose={closeSheet} />
       )}
       {splashDone && activeSheet === 'wallet' && (
         <WalletSheet

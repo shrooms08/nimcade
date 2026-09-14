@@ -419,3 +419,14 @@ enabled = true
 [functions.submit-score]
 enabled = true
 verify_jwt = false
+
+# Tip reports. The Nimiq chain authenticates them (the transaction must exist and match).
+[functions.record-tip]
+enabled = true
+verify_jwt = false
+
+# Daily Cup payouts. Guarded by the X-Cup-Admin-Key header instead of a JWT. The CLI has no
+# function schedules, so the 00:05 UTC run is a pg_cron job: migrations/0003_schedule_pay_cup.sql.
+[functions.pay-cup]
+enabled = true
+verify_jwt = false

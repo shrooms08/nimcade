@@ -8,8 +8,11 @@ import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
 import { Sheet } from '../components/Sheet'
 import { formatNim, shortAddress } from '../format'
+import { CupYesterday } from './CupYesterday'
 
 const DAY_MS = 86_400_000
+
+type CupView = 'today' | 'yesterday'
 
 function clock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -17,20 +20,24 @@ function clock(ms: number): string {
   return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
 }
 
-/** Today's Daily Cup per game: prize pool, countdown to 00:00 UTC, top 10 and your standing. */
+/** The Daily Cup per game: today's pool, countdown, top 10 and your standing, or yesterday's winners. */
 export function CupSheet({
   games,
   initialGameId,
   address,
+  refreshKey,
   onClose,
 }: {
   games: Game[]
   initialGameId: string
   address: string | null
+  /** Changes when something (a recorded tip) may have changed today's pool. */
+  refreshKey: number
   onClose: () => void
 }) {
   const name = usePlayerName()
   const [gameId, setGameId] = useState(initialGameId)
+  const [view, setView] = useState<CupView>('today')
   const [snapshot, setSnapshot] = useState<CupSnapshot | null>(null)
   const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(() => Date.now())
@@ -57,7 +64,7 @@ export function CupSheet({
     return () => {
       cancelled = true
     }
-  }, [gameId, address, day])
+  }, [gameId, address, day, refreshKey])
 
   const game = games.find(g => g.id === gameId) ?? games[0]
   const cup = snapshot?.gameId === gameId ? snapshot : null
@@ -80,44 +87,65 @@ export function CupSheet({
         ))}
       </div>
 
-      <div className="nc-cup-head">
-        <div className="nc-cup-head__block">
-          <span className="nc-caps">Prize pool</span>
-          <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? formatNim(cup.prizePoolNim) : '—'}</span>
-        </div>
-        <div className="nc-cup-head__block nc-cup-head__block--end">
-          <span className="nc-caps">Resets in (UTC)</span>
-          <span className="nc-cup-clock nc-num">{cup ? clock(cup.resetsAt - now) : '--:--:--'}</span>
-        </div>
-      </div>
-
-      <ol className="nc-cup-rows" aria-label={`${game.title} top 10`}>
-        {!cup && <li className="nc-cup-row nc-cup-row--loading">{failed ? "Couldn't load today's Cup." : "Loading today's Cup…"}</li>}
-        {cup && cup.top.length === 0 && <li className="nc-cup-row nc-cup-row--loading">No scores yet today. Be the first.</li>}
-        {cup?.top.map(entry => (
-          <li key={entry.rank} className={entry.prizeNim ? 'nc-cup-row is-prize' : 'nc-cup-row'}>
-            <span className="nc-cup-row__rank">{entry.rank}</span>
-            <span className="nc-cup-row__name">{entry.name}</span>
-            <span className="nc-cup-row__score nc-num">{entry.score.toLocaleString()}</span>
-            <span className="nc-cup-row__prize">{entry.prizeNim ? `${formatNim(entry.prizeNim)} NIM` : ''}</span>
-          </li>
+      <div className="nc-segmented nc-cup-days" role="tablist" aria-label="Day">
+        {(['today', 'yesterday'] as const).map(option => (
+          <button
+            key={option}
+            type="button"
+            role="tab"
+            aria-selected={view === option}
+            className={view === option ? 'nc-segmented__item is-on' : 'nc-segmented__item'}
+            onClick={() => setView(option)}
+          >
+            {option === 'today' ? 'Today' : 'Yesterday'}
+          </button>
         ))}
-      </ol>
-
-      <div className="nc-cup-you">
-        <span className="nc-cup-you__rank">{you?.rank ?? '—'}</span>
-        <div className="nc-cup-you__text">
-          <span className="nc-cup-you__name">{name ?? 'You'} · {address ? shortAddress(address) : 'not connected'}</span>
-          <span className="nc-cup-you__sub">
-            {!you || you.rank === null
-              ? `Play ${game.title} to enter`
-              : you.toPrizeZone !== null
-                ? `${you.toPrizeZone.toLocaleString()} to reach the prize zone`
-                : 'In the prize zone'}
-          </span>
-        </div>
-        <span className="nc-cup-you__score nc-num">{(you?.score ?? 0).toLocaleString()}</span>
       </div>
+
+      {view === 'yesterday'
+        ? <CupYesterday key={gameId} gameId={gameId} gameTitle={game.title} />
+        : (
+            <>
+              <div className="nc-cup-head">
+                <div className="nc-cup-head__block">
+                  <span className="nc-caps">Prize pool</span>
+                  <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? formatNim(cup.prizePoolNim) : '—'}</span>
+                </div>
+                <div className="nc-cup-head__block nc-cup-head__block--end">
+                  <span className="nc-caps">Resets in (UTC)</span>
+                  <span className="nc-cup-clock nc-num">{cup ? clock(cup.resetsAt - now) : '--:--:--'}</span>
+                </div>
+              </div>
+
+              <ol className="nc-cup-rows" aria-label={`${game.title} top 10`}>
+                {!cup && <li className="nc-cup-row nc-cup-row--loading">{failed ? "Couldn't load today's Cup." : "Loading today's Cup…"}</li>}
+                {cup && cup.top.length === 0 && <li className="nc-cup-row nc-cup-row--loading">No scores yet today. Be the first.</li>}
+                {cup?.top.map(entry => (
+                  <li key={entry.rank} className={entry.prizeNim ? 'nc-cup-row is-prize' : 'nc-cup-row'}>
+                    <span className="nc-cup-row__rank">{entry.rank}</span>
+                    <span className="nc-cup-row__name">{entry.name}</span>
+                    <span className="nc-cup-row__score nc-num">{entry.score.toLocaleString()}</span>
+                    <span className="nc-cup-row__prize">{entry.prizeNim ? `${formatNim(entry.prizeNim)} NIM` : ''}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="nc-cup-you">
+                <span className="nc-cup-you__rank">{you?.rank ?? '—'}</span>
+                <div className="nc-cup-you__text">
+                  <span className="nc-cup-you__name">{name ?? 'You'} · {address ? shortAddress(address) : 'not connected'}</span>
+                  <span className="nc-cup-you__sub">
+                    {!you || you.rank === null
+                      ? `Play ${game.title} to enter`
+                      : you.toPrizeZone !== null
+                        ? `${you.toPrizeZone.toLocaleString()} to reach the prize zone`
+                        : 'In the prize zone'}
+                  </span>
+                </div>
+                <span className="nc-cup-you__score nc-num">{(you?.score ?? 0).toLocaleString()}</span>
+              </div>
+            </>
+          )}
     </Sheet>
   )
 }

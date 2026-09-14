@@ -1,23 +1,21 @@
 import { corsFor } from '../_shared/http.ts'
-import { handleSubmission } from '../_shared/submitScore.ts'
-import type { SubmitDeps } from '../_shared/submitScore.ts'
+import { handleTip } from '../_shared/recordTip.ts'
+import type { RecordTipDeps } from '../_shared/recordTip.ts'
 
-export interface SubmitScoreOptions {
-  verifier: SubmitDeps['verifier']
-  store: Pick<SubmitDeps, 'recordScore' | 'rankOf'>
+export interface RecordTipOptions {
+  deps: RecordTipDeps
   /** Base CORS headers (from @supabase/supabase-js/cors); the origin is set per request. */
   corsHeaders: Record<string, string>
   /** The ALLOWED_ORIGINS secret. */
   allowedOrigins?: string
-  now?: () => Date
 }
 
-/** The submit-score HTTP handler. index.ts wires in the real verifier, database and headers. */
-export function createSubmitScoreHandler(options: SubmitScoreOptions) {
+/** The record-tip HTTP handler. index.ts wires in the RPC client, database and headers. */
+export function createRecordTipHandler(options: RecordTipOptions) {
   return async (req: Request): Promise<Response> => {
     const { headers, refused, reply } = corsFor(req, options.corsHeaders, options.allowedOrigins)
 
-    // Server-to-server calls (no Origin) are judged by the signature alone.
+    // Server-to-server calls (no Origin) are judged by the chain alone.
     if (refused)
       return reply(403, { ok: false, error: 'Origin not allowed.' })
     if (req.method === 'OPTIONS')
@@ -33,12 +31,12 @@ export function createSubmitScoreHandler(options: SubmitScoreOptions) {
       return reply(400, { ok: false, error: 'Expected a JSON body.' })
     }
     try {
-      const result = await handleSubmission(body, { verifier: options.verifier, now: options.now ?? (() => new Date()), ...options.store })
+      const result = await handleTip(body, options.deps)
       return reply(result.status, result.body)
     }
     catch (error) {
-      console.error('submit-score failed', error)
-      return reply(500, { ok: false, error: 'Could not record the score.' })
+      console.error('record-tip failed', error)
+      return reply(500, { ok: false, error: 'Could not record the tip.' })
     }
   }
 }
