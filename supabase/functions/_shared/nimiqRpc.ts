@@ -40,6 +40,8 @@ export interface RpcTransaction {
   fromType?: number
   to: string
   value: number
+  /** Hex; "" when the transaction carries no data. */
+  recipientData?: string
   executionResult?: boolean
 }
 
@@ -78,6 +80,11 @@ export function createNimiqRpc(url: string, fetchFn: FetchLike = fetch) {
           return null
         throw error
       }
+    },
+    /** An account's balance in Luna (0 for an address the chain hasn't seen). */
+    async getBalance(address: string): Promise<number> {
+      const account = await call<{ balance?: number } | null>('getAccountByAddress', [address])
+      return Number(account?.balance ?? 0)
     },
     /** Up to `max` of an address's most recent transactions, newest first. */
     getTransactionsByAddress: (address: string, max: number) => call<RpcTransaction[]>('getTransactionsByAddress', [address, max, null]),

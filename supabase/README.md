@@ -22,6 +22,13 @@ cat supabase/migrations/0003_schedule_pay_cup.sql | pbcopy
 - `0001_init.sql`: profiles, scores, tips, cups, the `cup_board` and `tip_counts` views, `record_score`.
 - `0002_tips_payouts.sql`: the `payouts` table (anyone can read it) and the service-role helpers `add_to_cup_pool`, `record_tip` and `claim_cup`.
 - `0003_schedule_pay_cup.sql`: the daily 00:05 UTC run.
+- `0004_cup_seed.sql`: `cup_settings` (a daily seed per game, anyone can read it), `seed_today_cups()` with its 00:00:30 UTC job, and `payouts.reason`.
+
+```bash
+cat supabase/migrations/0004_cup_seed.sql | pbcopy
+```
+
+To start mainnet with no testnet data, run [scripts/reset-data.sql](../scripts/reset-data.sql) once in the SQL editor. It empties payouts, tips, cups, scores and profiles, and keeps `cup_settings`, the schema and the cron jobs. It cannot be undone.
 
 ### Schedule
 
@@ -33,6 +40,21 @@ select vault.create_secret('<the CUP_ADMIN_KEY value>', 'nimcade_cup_admin_key')
 ```
 
 Check runs with `select * from cron.job_run_details order by start_time desc limit 5;` and the HTTP results with `select * from net._http_response order by created desc limit 5;`.
+
+### Daily seed
+
+`nimcade-seed-cups` runs `seed_today_cups()` at 00:00:30 UTC. pg_cron schedules have minute resolution, so the job starts at 00:00 and waits 30 seconds. The function gives each game a cups row for today with `seed_luna` from `cup_settings`.
+
+- **Rows that already exist:** they keep their seed. The one exception is a row a tip created in the first seconds of the day (seed still 0, unpaid), which gets the seed too.
+- **Running it again:** it sets the seed and never adds to it, so a second run changes nothing.
+
+Seeds start at 0. Set one per game, in Luna (1 NIM = 100,000 Luna), for example 50 NIM a day for Dodge:
+
+```sql
+update public.cup_settings set daily_seed_luna = 5000000 where game_id = 'dodge';
+```
+
+The seed is paid out of the hot wallet with the pool, so keep the wallet funded for the seeds you set.
 
 ## Function secrets
 
@@ -54,10 +76,17 @@ The seed is never logged or returned. `pay-cup` answers with the hot wallet's ad
 Create the hot wallet once with:
 
 ```bash
-node scripts/gen-hot-wallet.mjs
+node scripts/gen-hot-wallet.mjs                                   # testnet: ~/.nimcade-hot.key
+node scripts/gen-hot-wallet.mjs --out ~/.nimcade-hot-mainnet.key  # mainnet
 ```
 
-It generates a new key pair, writes the private key as 64 hex characters to `~/.nimcade-hot.key` (mode 600, outside the repo) and prints only the address. It refuses to run if that file already exists, so it never replaces a wallet that may hold funds.
+It generates a new key pair, writes the private key as 64 hex characters to the `--out` path (default `~/.nimcade-hot.key`, mode 600) and prints only the address. It refuses to overwrite an existing file, so it never replaces a wallet that may hold funds. It also refuses paths inside the repository, so the key can't be committed by accident.
+
+For mainnet, set the secret from the mainnet file:
+
+```bash
+supabase secrets set NIMIQ_NETWORK=mainnet CUP_HOT_WALLET_SEED="$(cat ~/.nimcade-hot-mainnet.key)"
+```
 
 - **Set the secret from the file**, without the key touching your screen or shell history:
 
@@ -75,7 +104,7 @@ It generates a new key pair, writes the private key as 64 hex characters to `~/.
   2. Send the remaining NIM from the old address to the new one.
   3. Set the secret again from the new file.
   4. Delete the old file once the old address is empty (`rm -P` on macOS).
-- **Testnet and mainnet use the same key format.** Use a separate key file for each network. Move one aside before generating the other, and keep them apart by name.
+- **Testnet and mainnet use the same key format.** Keep a separate key file per network: `~/.nimcade-hot.key` for testnet, `~/.nimcade-hot-mainnet.key` for mainnet. Never set the testnet key while `NIMIQ_NETWORK=mainnet`.
 
 ## Deploy
 
@@ -95,7 +124,26 @@ supabase functions deploy pay-cup --no-verify-jwt
 3. signs each transaction locally with `@nimiq/core` (fee 0, a note like `Nimcade Daily Cup 2026-09-13 dodge #1`) and broadcasts it over JSON-RPC;
 4. marks the row `sent` with its `tx_hash`, or `due` with `tx_hash` null when sending failed.
 
-Pay `due` rows by hand, then set `status = 'sent'` and the `tx_hash`. A row left at `sending` means the run stopped mid-way: check the hot wallet's history before paying it.
+**Balance guard.** Each run reads the hot wallet balance once, before claiming anything, and draws it down game by game.
+
+- **Short balance:** if a game's prizes add up to more than what's left, none of that game's prizes are sent. Every row is marked `due` with `reason = 'insufficient hot wallet balance'`, so nobody gets a partial payout while others wait.
+- **Unreadable balance:** the run stops with HTTP 502 and claims nothing.
+- **In the response:** the response includes `balanceLuna` for the run and for each game.
+
+**Retrying.** The daily job never revisits a Cup once `paid_at` is set. After topping up the hot wallet, re-attempt a day's `due` rows by hand:
+
+```bash
+curl -X POST "https://<project-ref>.supabase.co/functions/v1/pay-cup?retryDue=1&day=2026-09-13" \
+  -H "X-Cup-Admin-Key: $CUP_ADMIN_KEY"
+```
+
+A retry works per game, all or nothing, under the same balance guard.
+
+- **No double pays:** before resending, it searches the hot wallet's last 100 transactions for each prize (same recipient, amount and note). A prize an earlier attempt did get on chain is marked `sent` with that hash instead of being paid twice.
+- **Concurrent retries:** each row moves from `due` to `sending` before it is sent, so two retries can't send the same prize.
+- **Dry run:** add `dryRun=1` to see the plan first.
+
+You can still pay a `due` row by hand: set `status = 'sent'` and the `tx_hash` afterwards. A row left at `sending` means a run stopped mid-way: check the hot wallet's history before paying it.
 
 Trigger it by hand to test. `day` and `dryRun` work in the query string or a JSON body; a dry run plans the payouts without writing or sending anything:
 

@@ -1,5 +1,6 @@
-import { isFinishedDay, payCups, previousUtcDay, sameSecret } from '../_shared/cupPayout.ts'
-import type { PayCupDeps } from '../_shared/cupPayout.ts'
+import { isFinishedDay, previousUtcDay, sameSecret } from '../_shared/cupPayout.ts'
+import { BalanceUnavailableError, payCups } from '../_shared/payCups.ts'
+import type { PayCupDeps } from '../_shared/payCups.ts'
 
 export interface PayCupOptions {
   /** The CUP_ADMIN_KEY secret; requests must send it as X-Cup-Admin-Key. */
@@ -13,8 +14,9 @@ export interface PayCupOptions {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
 /**
- * The pay-cup HTTP handler: POST with X-Cup-Admin-Key. Pays yesterday (UTC) by default; pass
- * `day` (YYYY-MM-DD) and `dryRun` in the query string or a JSON body to test.
+ * The pay-cup HTTP handler: POST with X-Cup-Admin-Key. Pays yesterday (UTC) by default. In the
+ * query string or a JSON body: `day` (YYYY-MM-DD), `dryRun` to plan without writing or sending,
+ * and `retryDue` to re-attempt that day's 'due' payouts.
  */
 export function createPayCupHandler(options: PayCupOptions) {
   return async (req: Request): Promise<Response> => {
@@ -41,11 +43,13 @@ export function createPayCupHandler(options: PayCupOptions) {
       }
     }
     const query = new URL(req.url).searchParams
+    const flag = (name: string) => ['1', 'true'].includes(query.get(name) ?? '') || body[name] === true
     const now = options.now?.() ?? new Date()
     const day = query.get('day') ?? body.day ?? previousUtcDay(now)
     if (!isFinishedDay(day, now))
       return reply(400, { ok: false, error: 'day must be a finished UTC day, as YYYY-MM-DD.' })
-    const dryRun = ['1', 'true'].includes(query.get('dryRun') ?? '') || body.dryRun === true
+    const dryRun = flag('dryRun')
+    const retryDue = flag('retryDue')
 
     let hotWallet: string | null = null
     try {
@@ -58,10 +62,12 @@ export function createPayCupHandler(options: PayCupOptions) {
     }
 
     try {
-      const summary = await payCups(day, options.deps, { dryRun })
-      return reply(200, { ok: true, dryRun, hotWallet, ...summary })
+      const summary = await payCups(day, options.deps, { dryRun, retryDue })
+      return reply(200, { ok: true, dryRun, retryDue, hotWallet, ...summary })
     }
     catch (error) {
+      if (error instanceof BalanceUnavailableError)
+        return reply(502, { ok: false, hotWallet, error: error.message })
       console.error('pay-cup failed', errorText(error))
       return reply(500, { ok: false, error: 'Could not pay the Cup.' })
     }

@@ -183,3 +183,11 @@
   font-size: var(--nc-fs-caps);
   font-weight: 500;
 }
+
+/* Today's pool before any tip or seed. */
+.nc-cup-pool--empty {
+  font-size: var(--nc-fs-lg);
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.2;
+}

@@ -109,7 +109,10 @@ export function CupSheet({
               <div className="nc-cup-head">
                 <div className="nc-cup-head__block">
                   <span className="nc-caps">Prize pool</span>
-                  <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? formatNim(cup.prizePoolNim) : '—'}</span>
+                  {cup?.prizePoolNim === 0
+                    // No tips and no seed yet today (the pool is tips plus seed).
+                    ? <span className="nc-cup-pool nc-cup-pool--empty">Pool grows with tips</span>
+                    : <span className="nc-cup-pool nc-num"><Coin size={22} />{cup ? formatNim(cup.prizePoolNim) : '—'}</span>}
                 </div>
                 <div className="nc-cup-head__block nc-cup-head__block--end">
                   <span className="nc-caps">Resets in (UTC)</span>

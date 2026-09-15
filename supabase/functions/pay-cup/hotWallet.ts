@@ -1,6 +1,7 @@
 import { Address, Entropy, KeyPair, PrivateKey, TransactionBuilder } from 'npm:@nimiq/core@2.21.0'
-import type { PayoutRow } from '../_shared/cupPayout.ts'
+import { payoutNote } from '../_shared/cupPayout.ts'
 import type { NimiqRpc } from '../_shared/nimiqRpc.ts'
+import type { PayoutRow } from '../_shared/payCups.ts'
 
 /** The first account of a Nimiq wallet created from entropy (BIP39 accounts). */
 const ENTROPY_ACCOUNT_PATH = "m/44'/242'/0'/0'"
@@ -31,8 +32,9 @@ export function createCupSender(keyPair: KeyPair, rpc: NimiqRpc, networkId: numb
   return async (row: PayoutRow): Promise<string> => {
     const recipient = Address.fromUserFriendlyAddress(row.wallet)
     const validityStartHeight = await rpc.getBlockNumber()
-    // The note makes each prize's transaction unique and tells the winner what it is.
-    const note = new TextEncoder().encode(`Nimcade Daily Cup ${row.day} ${row.gameId} #${row.rank}`)
+    // The note makes each prize's transaction unique, tells the winner what it is, and lets
+    // retryDue recognise a prize that already went out.
+    const note = new TextEncoder().encode(payoutNote(row))
     const tx = TransactionBuilder.newBasicWithData(keyPair.toAddress(), recipient, note, BigInt(row.amountLuna), 0n, validityStartHeight, networkId)
     // The second key pair is only for staking transactions.
     tx.sign(keyPair, undefined)
