@@ -220,9 +220,10 @@
   pointer-events: auto;
 }
 
+/* Entering play, the pill squeezes and rises into the round button at the top. */
 .nc-nav.is-hidden {
   opacity: 0;
-  transform: scaleX(0.28);
+  transform: translateY(calc(-1 * var(--nc-nav-morph))) scaleX(0.28);
 }
 
 .nc-nav.is-hidden > * {
@@ -253,7 +254,7 @@
 .nc-dots {
   position: absolute;
   left: 50%;
-  bottom: var(--nc-dots-bottom);
+  top: var(--nc-dots-top);
   z-index: 60;
   display: grid;
   place-items: center;

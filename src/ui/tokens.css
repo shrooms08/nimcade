@@ -93,8 +93,15 @@
   --nc-safe-bottom: env(safe-area-inset-bottom, 0px);
   --nc-chrome-top: calc(var(--nc-safe-top) + 12px);
   --nc-nav-bottom: calc(var(--nc-safe-bottom) + 52px);
-  --nc-dots-bottom: calc(var(--nc-safe-bottom) + 48px);
+  /* In play the round button sits at the top: the bottom belongs to the system gesture bar
+     and, in NimNom, to the d-pad. */
+  --nc-dots-top: calc(var(--nc-safe-top) + 12px);
+  --nc-nav-pill-h: 45px;
+  /* How far the nav pill travels while it shrinks into the round button above it. */
+  --nc-nav-morph: calc(100dvh - var(--nc-nav-bottom) - var(--nc-nav-pill-h) - var(--nc-dots-top));
   --nc-info-bottom: calc(var(--nc-safe-bottom) + 118px);
+  /* No control may come within this much of the bottom edge while a game is in play. */
+  --nc-touch-floor: calc(var(--nc-safe-bottom) + 88px);
   /* The play area inside a card clears the top chips and the bottom round button. */
   --nc-stage-top: calc(var(--nc-safe-top) + 56px);
   --nc-stage-bottom: calc(var(--nc-safe-bottom) + 104px);

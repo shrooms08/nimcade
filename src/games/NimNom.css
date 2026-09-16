@@ -1,0 +1,76 @@
+/* NimNom: the maze board is drawn on canvas; these are the d-pad controls under it. */
+
+/*
+ * The arrows and the dead zone under them. The stage already reserves --nc-stage-bottom below
+ * the surface; the padding tops that up if it is ever less than the touch floor, so the arrows
+ * always end at least 88px plus the safe area above the bottom edge. The maze above has
+ * flex: 1 and scales down to make room.
+ */
+.nimnom__controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  padding-bottom: max(0px, calc(var(--nc-touch-floor) - var(--nc-stage-bottom)));
+}
+
+/* A finger that slips below the arrows lands here and nothing happens. */
+.nimnom__deadzone {
+  flex: 0 0 auto;
+  height: 16px;
+  touch-action: none;
+}
+
+.nimnom__pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, 64px));
+  grid-template-rows: repeat(2, 56px);
+  gap: 8px;
+  justify-content: center;
+}
+
+.nimnom__key {
+  display: grid;
+  place-items: center;
+  min-width: 60px;
+  width: 64px;
+  min-height: 56px;
+  height: 56px;
+  border-radius: var(--nc-radius-tile);
+  background: rgba(255, 255, 255, 0.1);
+  touch-action: none;
+}
+
+.nimnom__key:active {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(0.95);
+}
+
+.nimnom__key svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--nc-white);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nimnom__key--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.nimnom__key--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.nimnom__key--down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.nimnom__key--right {
+  grid-column: 3;
+  grid-row: 2;
+}

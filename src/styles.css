@@ -222,61 +222,6 @@
   }
 }
 
-/* NimNom ----------------------------------------------------------- */
-
-.nimnom__pad {
-  display: grid;
-  grid-template-columns: repeat(3, 64px);
-  grid-template-rows: repeat(2, 56px);
-  gap: 8px;
-  justify-content: center;
-}
-
-.nimnom__key {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 56px;
-  border-radius: var(--nc-radius-tile);
-  background: rgba(255, 255, 255, 0.1);
-  touch-action: none;
-}
-
-.nimnom__key:active {
-  background: rgba(255, 255, 255, 0.22);
-  transform: scale(0.95);
-}
-
-.nimnom__key svg {
-  width: 28px;
-  height: 28px;
-  fill: none;
-  stroke: var(--nc-white);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.nimnom__key--up {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.nimnom__key--left {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.nimnom__key--down {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.nimnom__key--right {
-  grid-column: 3;
-  grid-row: 2;
-}
-
 /* Loading mark (shared) ------------------------------------------------- */
 
 .nc-loading {

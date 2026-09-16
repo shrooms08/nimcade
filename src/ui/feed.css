@@ -48,6 +48,12 @@
   opacity: 0;
 }
 
+/* Invisible in browse means untappable too, so the arrows can't swallow a tap meant to start play. */
+.nc-card__stage.is-browsing .nimnom__pad,
+.nc-card__stage.is-browsing .nimnom__deadzone {
+  pointer-events: none;
+}
+
 /* Browse: the game's cover, crossfading with the game mounted underneath. */
 .nc-card__cover {
   position: absolute;

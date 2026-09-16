@@ -18,6 +18,7 @@ import type { Fit } from './shared/useCanvasBoard'
 import { useGameLoop } from './shared/useGameLoop'
 import { useRound } from './shared/useRound'
 import type { GameProps } from './types'
+import './NimNom.css'
 
 export const NIMNOM_ID = 'nimnom'
 
@@ -40,6 +41,8 @@ export default function NimNom({ active, onScore }: GameProps) {
   const scoreRef = useRef<HTMLSpanElement | null>(null)
   const waveRef = useRef<HTMLSpanElement | null>(null)
   const bannerRef = useRef<HTMLParagraphElement | null>(null)
+  const controlsRef = useRef<HTMLDivElement | null>(null)
+  const padRef = useRef<HTMLDivElement | null>(null)
 
   const { boardRef, canvasRef, viewRef, onResizeRef } = useCanvasBoard(fitMaze)
 
@@ -143,6 +146,27 @@ export default function NimNom({ active, onScore }: GameProps) {
     return stop
   }, [active, resetRound, stop])
 
+  /*
+   * The dead zone under the arrows. Chromium's touch adjustment pulls a touch that lands just
+   * below an arrow onto that arrow, so testing the event's target isn't enough: this listener
+   * runs in the capture phase, before React's (which are delegated to the root), and drops any
+   * touch whose real coordinates are below the pad.
+   */
+  useEffect(() => {
+    const controls = controlsRef.current
+    if (!controls)
+      return
+    const swallow = (event: PointerEvent) => {
+      const pad = padRef.current?.getBoundingClientRect()
+      if (pad && event.clientY > pad.bottom) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+    controls.addEventListener('pointerdown', swallow, { capture: true })
+    return () => controls.removeEventListener('pointerdown', swallow, { capture: true })
+  }, [])
+
   const press = (dir: Dir, event: ReactPointerEvent) => {
     event.preventDefault()
     event.stopPropagation()
@@ -170,20 +194,24 @@ export default function NimNom({ active, onScore }: GameProps) {
           {round.phase === 'ready' && <p className="game-hint">Tap an arrow to start</p>}
         </div>
 
-        <div className="nimnom__pad">
-          {PAD.map(({ dir, label, path }) => (
-            <button
-              key={dir}
-              type="button"
-              className={`nimnom__key nimnom__key--${dir}`}
-              aria-label={label}
-              onPointerDown={event => press(dir, event)}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d={path} />
-              </svg>
-            </button>
-          ))}
+        <div ref={controlsRef} className="nimnom__controls">
+          <div ref={padRef} className="nimnom__pad">
+            {PAD.map(({ dir, label, path }) => (
+              <button
+                key={dir}
+                type="button"
+                className={`nimnom__key nimnom__key--${dir}`}
+                aria-label={label}
+                onPointerDown={event => press(dir, event)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={path} />
+                </svg>
+              </button>
+            ))}
+          </div>
+          {/* Swallows a touch that lands just below the arrows, near the system gesture bar. */}
+          <div className="nimnom__deadzone" aria-hidden="true" />
         </div>
       </div>
 
