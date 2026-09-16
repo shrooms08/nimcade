@@ -69,7 +69,7 @@ class FakeContext {
 }
 
 class FakeOffline {
-  decodeAudioData = vi.fn(async () => ({ duration: 0.978 }))
+  decodeAudioData = vi.fn(async () => ({ duration: 1.494 }))
 }
 
 const listeners = new Map<string, Set<(event?: unknown) => void>>()
@@ -139,7 +139,7 @@ describe('sound engine', () => {
     expect(FakeContext.instances).toHaveLength(1)
     sound.play('tap')
     expect(started()).toHaveLength(1)
-    expect(started()[0].buffer).toEqual({ duration: 0.978 })
+    expect(started()[0].buffer).toEqual({ duration: 1.494 })
   })
 
   it('varies the pitch of rapid cues by up to 4%, and leaves the others alone', async () => {
@@ -187,7 +187,7 @@ describe('sound engine', () => {
     const hum = started().at(-1)!
     expect(hum.loop).toBe(true)
     expect(hum.loopStart).toBeCloseTo(0.02, 3)
-    expect(hum.loopEnd).toBeCloseTo(0.02 + 41375 / 44100, 3)
+    expect(hum.loopEnd).toBeCloseTo(0.02 + 64139 / 44100, 3)
     expect(context().gains.at(-1)!.gain.setTargetAtTime).toHaveBeenCalled()
 
     sound.setBoostHum(true) // holding again doesn't stack a second loop

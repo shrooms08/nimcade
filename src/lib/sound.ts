@@ -29,21 +29,24 @@ const MUTED_KEY = 'nimcade:muted'
  * (Measured LUFS per file is in public/sfx/CREDITS.md.)
  */
 const CUE_GAIN: Record<Sample, number> = {
-  'tap': 0.45,
-  'score': 0.6,
+  // Cues that repeat within a round stay well back in the mix.
+  'tap': 0.4,
+  'score': 0.4,
+  'eat': 0.4,
+  'coin': 0.4,
+  'tick': 0.4,
+  'swipe': 0.4,
+  // Chimes and one-off effects.
   'perfect': 0.7,
   'wave': 0.7,
   'power': 0.7,
-  'eat': 0.4,
-  'eat-chaser': 0.8,
-  'fail': 0.85,
-  'coin': 0.6,
-  'tick': 0.85,
-  'countdown-beep': 0.75,
-  'countdown-go': 0.85,
-  'swipe': 0.5,
-  'tip-success': 0.8,
-  'new-best': 0.85,
+  'eat-chaser': 0.7,
+  'fail': 0.7,
+  'countdown-beep': 0.7,
+  'countdown-go': 0.7,
+  // Jingles.
+  'tip-success': 0.75,
+  'new-best': 0.75,
   'boost-hum': 0.3,
 }
 
@@ -53,7 +56,7 @@ const CUE_GAIN: Record<Sample, number> = {
  * the whole buffer keeps the wrap inside clean, phase-aligned audio: no click each cycle.
  */
 const HUM_LOOP_START = 0.02
-const HUM_LOOP_SECONDS = 41375 / 44100
+const HUM_LOOP_SECONDS = 64139 / 44100
 
 const SAMPLES = Object.keys(CUE_GAIN) as Sample[]
 const buffers = new Map<Sample, AudioBuffer>()

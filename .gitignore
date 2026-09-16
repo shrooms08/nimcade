@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Generated sound candidates, kept out of the repo (see public/sfx for the shipped set)
+sfx-raw/
