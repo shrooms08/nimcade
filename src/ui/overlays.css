@@ -238,3 +238,17 @@
   color: var(--nc-grey-300);
   font-weight: 500;
 }
+
+/* Sound toggle on the game over overlay; top left, clear of the segment and the wallet chip. */
+.nc-over__mute {
+  position: absolute;
+  top: 14px;
+  left: var(--nc-edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--nc-radius-pill);
+  color: var(--nc-grey-300);
+}

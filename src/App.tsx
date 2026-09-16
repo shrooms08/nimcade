@@ -8,6 +8,7 @@ import { useCupEntry } from './lib/cupEntry'
 import { localStats } from './lib/localStats'
 import { nimToLuna, sendTip } from './lib/nimiq'
 import { readBest } from './lib/scores'
+import { armAudio, play, preloadSounds } from './lib/sound'
 import { backendOn } from './lib/supabase'
 import type { TipAmount } from './lib/tip'
 import { recordTip } from './lib/tipRecord'
@@ -85,13 +86,21 @@ export default function App() {
     setIndex(next)
     setGameOver(null)
     setMode('browse')
+    play('swipe')
     dismissSwipeHint()
   }, [dismissSwipeHint])
 
   useEffect(() => {
     localStats.forgetHintFlags()
     localStats.forgetRetiredGames()
+    armAudio()
   }, [])
+
+  // After the splash, never before it: the fetches run in parallel and don't block the feed.
+  useEffect(() => {
+    if (splashDone)
+      void preloadSounds()
+  }, [splashDone])
 
   const enterPlay = () => {
     setGameOver(null)
@@ -150,6 +159,7 @@ export default function App() {
     setStatsVersion(v => v + 1)
     closeSheet()
     tipSuccess.show({ amount, maker: makerHandle(target.maker), hash }, TIP_SUCCESS_MS)
+    play('tip-success')
     try {
       navigator.vibrate?.(12)
     }

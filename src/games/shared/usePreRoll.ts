@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { play } from '../../lib/sound'
 
 /** Shown in order, PRE_ROLL_STEP_MS each; the action starts once GO has had its turn. */
 export const PRE_ROLL_STEPS = ['3', '2', '1', 'GO'] as const
@@ -36,6 +37,7 @@ export function usePreRoll(onDone: () => void) {
     clearTimer()
     function show(index: number) {
       setLabel(PRE_ROLL_STEPS[index])
+      play(index === PRE_ROLL_STEPS.length - 1 ? 'countdown-go' : 'countdown-beep')
       timerRef.current = window.setTimeout(() => {
         if (index + 1 < PRE_ROLL_STEPS.length) {
           show(index + 1)

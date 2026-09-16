@@ -285,3 +285,10 @@
   border-radius: 50%;
   background: var(--nc-white);
 }
+
+.nc-stat--mute {
+  min-width: 28px;
+  min-height: 28px;
+  justify-content: center;
+  color: var(--nc-grey-300);
+}

@@ -2,6 +2,7 @@ import { compactNumber } from '../../lib/localStats'
 import type { Game } from '../../games/types'
 import { Coin } from '../components/Coin'
 import { InfoIcon, PlayIcon, ShareIcon, StarIcon } from '../components/icons'
+import { MuteButton } from '../components/MuteButton'
 import { makerHandle } from '../format'
 
 /** The floating card over the current game: title, maker, stats and the gold Tip NIM pill. */
@@ -40,6 +41,7 @@ export function InfoCard({
           <button type="button" className="nc-stat nc-stat--share" onClick={onShare} aria-label="Share" tabIndex={tab}>
             <ShareIcon />
           </button>
+          <MuteButton className="nc-stat nc-stat--mute" tabIndex={tab} />
         </div>
       </div>
       <button type="button" className="nc-tip-pill" onClick={onTip} tabIndex={tab}>

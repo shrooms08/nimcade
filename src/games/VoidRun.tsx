@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { setBoostHum } from '../lib/sound'
+import { createCues } from './shared/cues'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { LoadingMark } from './shared/LoadingMark'
@@ -158,6 +160,8 @@ export default function VoidRun({ active, visible = false, onScore }: GameProps)
     if (boosting !== last.boosting) {
       last.boosting = boosting
       boostRef.current?.classList.toggle('is-on', boosting)
+      // Covers both ends of the hold: the finger lifting, and the energy running out.
+      setBoostHum(boosting)
     }
     if (boostFillRef.current)
       boostFillRef.current.style.transform = `scaleX(${world.boostEnergy})`
@@ -172,9 +176,14 @@ export default function VoidRun({ active, visible = false, onScore }: GameProps)
     }
   }, [])
 
+  // Sound only: gates passed and stages cleared are already counted on the world.
+  const cuesRef = useRef(createCues({ passes: 'score', stage: 'wave', crashed: 'fail' }))
+
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     step(world, dt)
+    // A crash also ends the boost, which stops the hum through updateHud below.
+    cuesRef.current.frame({ passes: world.passes, stage: world.stage, crashed: world.status === 'crashed' ? 1 : 0 })
     updateHud()
     rendererRef.current?.render(world)
     // Endless: the only way out is a hit with no shields left.
@@ -190,6 +199,8 @@ export default function VoidRun({ active, visible = false, onScore }: GameProps)
     cancelPreRoll()
     worldRef.current = createWorld()
     hudRef.current = { passes: 0, mult: 0, shields: -1, boosting: false, bannerStage: 0 }
+    cuesRef.current.reset({ passes: 0, stage: worldRef.current.stage, crashed: 0 })
+    setBoostHum(false)
     steerPointerRef.current = null
     boostPointerRef.current = null
     updateHud()

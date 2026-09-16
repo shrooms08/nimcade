@@ -6,6 +6,7 @@ import type { Game } from '../games/types'
 import type { CupEntryState } from '../lib/cupEntry'
 import { localStats } from '../lib/localStats'
 import { readBest, writeBest } from '../lib/scores'
+import { play } from '../lib/sound'
 import { GameOverOverlay } from '../ui/chrome/GameOverOverlay'
 import type { GameOverInfo } from '../ui/chrome/GameOverOverlay'
 import { renderCover } from '../ui/covers'
@@ -146,6 +147,8 @@ export default function GameCard({
     reportedRef.current = true
     const previousBest = lastRoundRef.current?.previousBest ?? Math.max(0, result.best)
     localStats.addPlay(game.id)
+    if (result.score > 0 && result.score > previousBest)
+      play('new-best')
     // The signed Cup entry for this round is made by App (useCupEntry in src/lib/cupEntry.ts) once onRoundOver lands.
     onRoundOverRef.current({ reason: result.reason, score: result.score, previousBest, newBest: result.score > 0 && result.score > previousBest })
   }, [game.id])

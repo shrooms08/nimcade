@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { play } from '../lib/sound'
+import { createCues } from './shared/cues'
 import { isActive } from './NimNomChasers'
 import { COLS, ROWS } from './NimNomLayouts'
 import { position } from './NimNomMovers'
@@ -106,9 +108,14 @@ export default function NimNom({ active, onScore }: GameProps) {
     }
   }, [])
 
+  // Sound only: the world reports through its counters, so no game logic changes for cues.
+  const cuesRef = useRef(createCues({ eaten: 'eat', spooked: 'power', chain: 'eat-chaser', wave: 'wave', caught: 'fail' }))
+
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     step(world, dt)
+    // Dots left counts down, so negate it: eating one is the counter going up.
+    cuesRef.current.frame({ eaten: -world.dotsLeft, spooked: world.spookedMs > 0 ? 1 : 0, chain: world.chain, wave: world.wave, caught: world.status === 'caught' ? 1 : 0 })
     updateHud()
     draw()
 
@@ -123,6 +130,8 @@ export default function NimNom({ active, onScore }: GameProps) {
   const resetRound = useCallback(() => {
     stop()
     worldRef.current = createWorld()
+    const world = worldRef.current
+    cuesRef.current.reset({ eaten: -world.dotsLeft, spooked: 0, chain: world.chain, wave: world.wave, caught: 0 })
     updateHud()
     draw()
   }, [draw, stop, updateHud])
@@ -141,6 +150,7 @@ export default function NimNom({ active, onScore }: GameProps) {
     if (!active || world.status === 'caught')
       return
     world.queued = dir
+    play('tap')
     if (world.status === 'ready') {
       world.status = 'playing'
       round.begin()

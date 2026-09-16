@@ -80,6 +80,24 @@ export function SwipeUpIcon() {
   )
 }
 
+export function SoundOnIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 6h2.2L9 3v10L5.2 10H3z" fill="currentColor" />
+      <path d="M11.2 5.8a3 3 0 010 4.4M13 4a5.5 5.5 0 010 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function SoundOffIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 6h2.2L9 3v10L5.2 10H3z" fill="currentColor" />
+      <path d="M11.5 6.5l3 3M14.5 6.5l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function OfflineIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">

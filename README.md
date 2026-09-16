@@ -17,6 +17,7 @@ Only the card on screen runs; swipe away and it pauses and resets. Best scores l
 - [Vite](https://vite.dev/), [React 19](https://react.dev/) and TypeScript, styled with plain CSS
 - [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk) for the wallet: `init`, `listAccounts`, `sendBasicTransaction`
 - [Supabase](https://supabase.com/) (Postgres with RLS, Edge Functions, pg_cron) for signed Cup scores, verified tips and Cup payouts; [`@nimiq/core`](https://www.npmjs.com/package/@nimiq/core) signs the payouts
+- Web Audio for the game sounds: CC0 samples from [Kenney](https://kenney.nl/) decoded into buffers ([public/sfx/CREDITS.md](public/sfx/CREDITS.md)), with a mute toggle in the info card
 - [Three.js](https://threejs.org/) for Void Run, loaded lazily in its own chunk
 - Space Grotesk via [Fontsource](https://fontsource.org/), self-hosted
 - [Vitest](https://vitest.dev/) for unit tests, [oxlint](https://oxc.rs/) for linting

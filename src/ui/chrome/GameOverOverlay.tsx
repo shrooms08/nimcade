@@ -4,6 +4,7 @@ import { getName, markNamePromptSeen, namePromptSeen } from '../../lib/profile'
 import { usePlayerName } from '../../lib/usePlayerName'
 import { Coin } from '../components/Coin'
 import { TrophyIcon } from '../components/icons'
+import { MuteButton } from '../components/MuteButton'
 import { NameField } from '../components/NameField'
 
 export interface GameOverInfo {
@@ -62,6 +63,7 @@ export function GameOverOverlay({
 
   return (
     <div className="nc-over" role="dialog" aria-label="Game over">
+      <MuteButton className="nc-over__mute" />
       {info.newBest && (
         <>
           <div className="nc-over__burst" aria-hidden="true">

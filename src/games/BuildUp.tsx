@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { readBest } from '../lib/scores'
+import { play } from '../lib/sound'
 import { applyShake } from './shared/effects'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
@@ -57,9 +58,18 @@ export default function BuildUp({ active, onScore }: GameProps) {
       bestRef.current.textContent = String(Math.max(bestAtStartRef.current, world.score))
   }, [])
 
+  // Sound only: a locked floor bumps `floors`, and a perfect one also bumps `perfectStreak`.
+  const cuesRef = useRef({ floors: 0, streak: 0, missed: false })
+
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
     step(world, dt, unitsTall(viewRef.current))
+    const cues = cuesRef.current
+    if (world.floors > cues.floors)
+      play(world.perfectStreak > cues.streak ? 'perfect' : 'score')
+    if (world.status === 'missed' && !cues.missed)
+      play('fail')
+    cuesRef.current = { floors: world.floors, streak: world.perfectStreak, missed: world.status === 'missed' }
     updateHud()
     draw()
     // Endless: the only way out is a complete miss, once the floor has tumbled away.
@@ -74,6 +84,7 @@ export default function BuildUp({ active, onScore }: GameProps) {
     stop()
     cancelPreRoll()
     worldRef.current = createWorld()
+    cuesRef.current = { floors: worldRef.current.floors, streak: 0, missed: false }
     bestAtStartRef.current = readBest(BUILD_UP_ID)
     updateHud()
     draw()
@@ -107,7 +118,12 @@ export default function BuildUp({ active, onScore }: GameProps) {
     pressLoad(world)
   }
 
-  const release = () => releaseLoad(worldRef.current)
+  const release = () => {
+    const dropping = worldRef.current.status === 'playing' && !worldRef.current.load.falling
+    releaseLoad(worldRef.current)
+    if (dropping && worldRef.current.load.falling)
+      play('tap')
+  }
 
   return (
     <div className="game-shell">

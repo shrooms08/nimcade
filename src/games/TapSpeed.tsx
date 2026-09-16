@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { readBest } from '../lib/scores'
+import { play } from '../lib/sound'
 import { EndPanel } from './shared/EndPanel'
 import { GameHud } from './shared/GameHud'
 import { useGameLoop } from './shared/useGameLoop'
@@ -43,6 +44,7 @@ export default function TapSpeed({ active, onScore }: GameProps) {
   const startRef = useRef(0)
   const tapsRef = useRef(0)
   const bestAtStartRef = useRef(0)
+  const lowRef = useRef(false)
   /** Timestamps of taps inside the rate window. */
   const recentRef = useRef<number[]>([])
 
@@ -58,7 +60,12 @@ export default function TapSpeed({ active, onScore }: GameProps) {
     const now = performance.now()
     const remaining = Math.max(0, ROUND_MS - (now - startRef.current))
     setText(clockRef.current, String(Math.ceil(remaining / 1000)))
-    clockRef.current?.classList.toggle('is-low', remaining < LOW_TIME_MS)
+    const low = remaining < LOW_TIME_MS
+    clockRef.current?.classList.toggle('is-low', low)
+    // Sound only: one warning when the clock turns low.
+    if (low && !lowRef.current)
+      play('tick')
+    lowRef.current = low
     showRate(now)
     if (remaining === 0) {
       round.finish(tapsRef.current, 'Time!')
@@ -72,6 +79,7 @@ export default function TapSpeed({ active, onScore }: GameProps) {
     stop()
     startRef.current = 0
     tapsRef.current = 0
+    lowRef.current = false
     recentRef.current = []
     bestAtStartRef.current = readBest(TAP_SPEED_ID)
     setText(clockRef.current, String(ROUND_MS / 1000))
@@ -116,6 +124,7 @@ export default function TapSpeed({ active, onScore }: GameProps) {
       return // time is up; the loop ends the round on its next frame
     }
     tapsRef.current += 1
+    play('tap')
     recentRef.current.push(now)
     const count = String(tapsRef.current)
     setText(countRef.current, count)
