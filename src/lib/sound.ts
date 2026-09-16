@@ -1,9 +1,12 @@
+import { armAudioContext, audioContext, audioLog, audioMaster, audioState, markAudioBroken } from './audioContext'
+import { isMuted, subscribeMuted } from './muteStore'
+
 /**
- * Game audio: CC0 samples (public/sfx, see CREDITS.md) decoded into Web Audio buffers.
+ * Game audio: samples in public/sfx (see CREDITS.md) decoded into Web Audio buffers.
  *
- * The context is created on the first user gesture, so nothing can play before one. Buffers are
- * decoded off the audio context after the splash, in parallel, and never block the feed. Every
- * entry point is guarded: if audio is unavailable, or a cue hasn't loaded, calls do nothing.
+ * The context is created on the first user gesture, so nothing can play before one, and it is
+ * resumed on every later gesture and wake-up (see audioContext.ts). Every entry point is
+ * guarded: if audio is unavailable, or a cue hasn't loaded, calls do nothing.
  */
 
 export type Cue =
@@ -16,32 +19,28 @@ export type Cue =
 const BOOST_HUM = 'boost-hum'
 type Sample = Cue | typeof BOOST_HUM
 
-const MASTER_GAIN = 0.6
 const MAX_VOICES = 8
 /** Cues that can repeat within a few hundred ms get ±4% pitch so they don't sound mechanical. */
 const VARIED: ReadonlySet<Cue> = new Set<Cue>(['tap', 'eat', 'coin', 'dodge-flip', 'dodge-coin'])
 const PITCH_VARIATION = 0.04
 const HUM_FADE_IN_MS = 120
 const HUM_FADE_OUT_MS = 200
-const MUTED_KEY = 'nimcade:muted'
+/** A cue asked for before its buffer was ready is worth playing only this late. */
+const QUEUE_MAX_AGE_MS = 300
 
 /**
- * Per-cue trim. The files are normalised to -16 LUFS where a cue is long enough to carry it;
- * the very short transients are peak-limited well below that, so they get more gain here.
- * (Measured LUFS per file is in public/sfx/CREDITS.md.)
+ * Per-cue trim. Repeating cues sit at 0.4 (Dodge's own pair lower still), chimes and one-off
+ * effects at 0.7, jingles at 0.75. (Measured loudness per file is in public/sfx/CREDITS.md.)
  */
 const CUE_GAIN: Record<Sample, number> = {
-  // Cues that repeat within a round stay well back in the mix.
   'tap': 0.4,
   'score': 0.4,
   'eat': 0.4,
   'coin': 0.4,
   'tick': 0.4,
   'swipe': 0.4,
-  // Dodge fires these constantly, so they sit below even the other repeating cues.
   'dodge-flip': 0.35,
   'dodge-coin': 0.35,
-  // Chimes and one-off effects.
   'perfect': 0.7,
   'wave': 0.7,
   'power': 0.7,
@@ -49,7 +48,6 @@ const CUE_GAIN: Record<Sample, number> = {
   'fail': 0.7,
   'countdown-beep': 0.7,
   'countdown-go': 0.7,
-  // Jingles.
   'tip-success': 0.75,
   'new-best': 0.75,
   'boost-hum': 0.3,
@@ -65,58 +63,35 @@ const HUM_LOOP_SECONDS = 64139 / 44100
 
 const SAMPLES = Object.keys(CUE_GAIN) as Sample[]
 const buffers = new Map<Sample, AudioBuffer>()
+/** Cues asked for while the buffers were still decoding, with when they were asked for. */
+const queued: { cue: Cue; at: number }[] = []
 
-let context: AudioContext | null = null
-let master: GainNode | null = null
 let voices = 0
 let loading: Promise<void> | null = null
 let hum: { source: AudioBufferSourceNode; gain: GainNode } | null = null
 let humWanted = false
 
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTED_KEY) === '1'
-  }
-  catch {
-    return false
-  }
-}
-
-let muted = readMuted()
-const mutedListeners = new Set<() => void>()
-
-/** Creates the context on a user gesture, or resumes it after the browser suspended it. */
-function ready(): AudioContext | null {
-  try {
-    if (!context) {
-      const Ctor = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctor)
-        return null
-      context = new Ctor()
-      master = context.createGain()
-      master.gain.value = MASTER_GAIN
-      master.connect(context.destination)
-    }
-    if (context.state === 'suspended')
-      void context.resume()
-    return context
-  }
-  catch {
-    return null
-  }
-}
-
-/** Starts the context on the first gesture; the listeners remove themselves. */
+/** Starts listening for gestures and wake-ups; a rebuilt context gets freshly decoded buffers. */
 export function armAudio() {
-  if (typeof window === 'undefined')
-    return
-  const start = () => {
-    ready()
-    for (const event of ['pointerdown', 'touchend', 'keydown'])
-      window.removeEventListener(event, start)
+  armAudioContext(() => {
+    buffers.clear()
+    loading = null
+    hum = null
+    voices = 0
+    void preloadSounds()
+  })
+}
+
+/** Plays whatever was asked for while the buffers were loading, if it is still fresh. */
+function flushQueue() {
+  const at = Date.now()
+  for (const item of queued.splice(0, queued.length)) {
+    const age = at - item.at
+    if (age < QUEUE_MAX_AGE_MS)
+      play(item.cue)
+    else
+      audioLog(`dropped ${item.cue}, queued ${age}ms ago`)
   }
-  for (const event of ['pointerdown', 'touchend', 'keydown'])
-    window.addEventListener(event, start, { passive: true })
 }
 
 /**
@@ -132,7 +107,7 @@ export function preloadSounds(): Promise<void> {
   let decoder: BaseAudioContext | null = null
   try {
     const Offline = window.OfflineAudioContext ?? (window as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext
-    decoder = Offline ? new Offline(1, 1, 44100) : ready()
+    decoder = Offline ? new Offline(1, 1, 44100) : audioContext(false)
   }
   catch {
     decoder = null
@@ -153,6 +128,7 @@ export function preloadSounds(): Promise<void> {
       // One missing cue shouldn't stop the others.
     }
   })).then(() => {
+    flushQueue()
     if (humWanted)
       startHum()
   })
@@ -161,15 +137,23 @@ export function preloadSounds(): Promise<void> {
 
 /** Plays a cue. Silent when muted, before the first gesture, or when the sample isn't loaded. */
 export function play(cue: Cue) {
-  if (muted)
+  if (isMuted())
+    return
+  const buffer = buffers.get(cue)
+  if (!buffer) {
+    // Still decoding: hold it briefly so an early tap isn't simply lost.
+    if (loading)
+      queued.push({ cue, at: Date.now() })
+    return
+  }
+  // No context yet means no gesture yet: never play before one. This also resumes a parked one.
+  const context = audioContext(false)
+  const master = audioMaster()
+  if (!context || !master)
     return
   try {
-    const buffer = buffers.get(cue)
-    // No context yet means no gesture yet: never play before one.
-    if (!buffer || !context || !master || voices >= MAX_VOICES)
+    if (voices >= MAX_VOICES)
       return
-    if (context.state === 'suspended')
-      void context.resume()
     const source = context.createBufferSource()
     source.buffer = buffer
     if (VARIED.has(cue))
@@ -191,7 +175,8 @@ export function play(cue: Cue) {
     source.start()
   }
   catch (error) {
-    // Audio is a nicety; never let it break a round.
+    // Audio is a nicety; never let it break a round. The next gesture rebuilds the context.
+    markAudioBroken()
     if (import.meta.env.DEV)
       console.warn(`sound: ${cue} failed`, error)
   }
@@ -199,7 +184,9 @@ export function play(cue: Cue) {
 
 function startHum() {
   const buffer = buffers.get(BOOST_HUM)
-  if (hum || muted || !buffer || !context || !master)
+  const context = audioContext(false)
+  const master = audioMaster()
+  if (hum || isMuted() || !buffer || !context || !master)
     return
   try {
     const source = context.createBufferSource()
@@ -223,6 +210,7 @@ function startHum() {
 
 function stopHum() {
   const current = hum
+  const context = audioContext(false)
   if (!current || !context)
     return
   hum = null
@@ -259,45 +247,21 @@ export function setBoostHum(on: boolean) {
   }
 }
 
-// Dev-only handle for automated checks; stripped from production builds.
-if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const host = window as typeof window & { __nimcade?: Record<string, unknown> }
-  host.__nimcade = { ...host.__nimcade, sound: () => ({ buffers: buffers.size, context: context !== null, master: master !== null, muted, voices, humWanted, hum: hum !== null }) }
-}
-
-export const isMuted = () => muted
-
-export function setMuted(next: boolean) {
-  muted = next
-  try {
-    localStorage.setItem(MUTED_KEY, next ? '1' : '0')
-  }
-  catch {
-    // Storage unavailable: the choice lasts this session.
-  }
-  if (next)
+// Muting stops the hum; unmuting brings it back if the hold is still on.
+subscribeMuted(() => {
+  if (isMuted())
     stopHum()
   else if (humWanted)
     startHum()
-  mutedListeners.forEach(listener => listener())
-}
+})
 
-export const toggleMuted = () => setMuted(!muted)
-
-/** Subscribe for useSyncExternalStore; also follows changes from another tab. */
-export function subscribeMuted(listener: () => void): () => void {
-  mutedListeners.add(listener)
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === MUTED_KEY) {
-      muted = readMuted()
-      listener()
-    }
-  }
-  if (typeof window !== 'undefined')
-    window.addEventListener('storage', onStorage)
-  return () => {
-    mutedListeners.delete(listener)
-    if (typeof window !== 'undefined')
-      window.removeEventListener('storage', onStorage)
+// Dev-only handle for automated checks; stripped from production builds.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  const host = window as typeof window & { __nimcade?: Record<string, unknown> }
+  host.__nimcade = {
+    ...host.__nimcade,
+    sound: () => ({ ...audioState(), buffers: buffers.size, muted: isMuted(), voices, humWanted, hum: hum !== null, queued: queued.length }),
   }
 }
+
+export { isMuted, setMuted, subscribeMuted, toggleMuted } from './muteStore'
