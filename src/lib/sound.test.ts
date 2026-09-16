@@ -120,9 +120,10 @@ describe('sound engine', () => {
   it('decodes every cue once, in parallel, without a gesture', async () => {
     const sound = await load()
     const files = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.map(([url]) => String(url))
-    expect(files).toHaveLength(16)
+    expect(files).toHaveLength(18)
     expect(files.filter(url => url.endsWith('/sfx/tap.ogg'))).toHaveLength(1)
     expect(files.some(url => url.endsWith('/sfx/boost-hum.ogg'))).toBe(true)
+    expect(files.some(url => url.endsWith('/sfx/dodge-flip.ogg'))).toBe(true)
     // Decoding happens off an OfflineAudioContext: no AudioContext exists yet.
     expect(FakeContext.instances).toHaveLength(0)
     sound.play('tap')

@@ -28,6 +28,11 @@ before reaching it are lifted with a gentle limiter (capped at +6 dB).
 | tip-success | warm short success jingle, three ascending bell notes, payment sent | 1000 ms |
 | new-best | celebratory jingle, bright bells and a soft sparkle tail, new high score | 927 ms |
 | boost-hum | smooth airy engine hum, steady, seamless loop, low volume | 1494 ms |
+| dodge-flip | quick soft dash swish, light and airy, lane change in a casual runner game, no click | 480 ms |
+| dodge-coin | gentle soft coin pickup, muted bell, quiet, repeating collectible in a runner, not sharp | 480 ms |
+
+Dodge uses `dodge-flip` and `dodge-coin` in place of the shared `tap` and `coin`, at a gentler
+0.35 gain, because a round fires them far more often than any other game fires its cues.
 
 The hum is cut to a whole loop and crossfaded by 150 ms, then padded with 20 ms of its own tail and
 head so the engine can loop inside clean audio (Vorbis rings at file edges). The loop is 64,139

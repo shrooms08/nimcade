@@ -9,6 +9,8 @@
 export type Cue =
   | 'tap' | 'score' | 'perfect' | 'wave' | 'power' | 'eat' | 'eat-chaser' | 'fail'
   | 'coin' | 'tick' | 'countdown-beep' | 'countdown-go' | 'swipe' | 'tip-success' | 'new-best'
+  // Dodge has its own flip and pickup, gentler than the shared tap and coin.
+  | 'dodge-flip' | 'dodge-coin'
 
 /** The looping boost hum, faded in and out with Void Run's hold. */
 const BOOST_HUM = 'boost-hum'
@@ -17,7 +19,7 @@ type Sample = Cue | typeof BOOST_HUM
 const MASTER_GAIN = 0.6
 const MAX_VOICES = 8
 /** Cues that can repeat within a few hundred ms get ±4% pitch so they don't sound mechanical. */
-const VARIED: ReadonlySet<Cue> = new Set<Cue>(['tap', 'eat', 'coin'])
+const VARIED: ReadonlySet<Cue> = new Set<Cue>(['tap', 'eat', 'coin', 'dodge-flip', 'dodge-coin'])
 const PITCH_VARIATION = 0.04
 const HUM_FADE_IN_MS = 120
 const HUM_FADE_OUT_MS = 200
@@ -36,6 +38,9 @@ const CUE_GAIN: Record<Sample, number> = {
   'coin': 0.4,
   'tick': 0.4,
   'swipe': 0.4,
+  // Dodge fires these constantly, so they sit below even the other repeating cues.
+  'dodge-flip': 0.35,
+  'dodge-coin': 0.35,
   // Chimes and one-off effects.
   'perfect': 0.7,
   'wave': 0.7,

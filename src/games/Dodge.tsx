@@ -75,7 +75,7 @@ export default function Dodge({ active, onScore }: GameProps) {
   }, [])
 
   // Sound only: the score counts collected coins, and the speed text changes on each step up.
-  const cuesRef = useRef(createCues({ score: 'coin', crashed: 'fail' }))
+  const cuesRef = useRef(createCues({ score: 'dodge-coin', crashed: 'fail' }))
 
   const { start, stop } = useGameLoop((dt) => {
     const world = worldRef.current
@@ -132,7 +132,7 @@ export default function Dodge({ active, onScore }: GameProps) {
     world.lane = world.lane === 0 ? 1 : 0
     // Flipping mid-flip reverses from where the critter currently is.
     world.flip = 1 - world.flip
-    play('tap')
+    play('dodge-flip')
   }
 
   return (
